@@ -2,18 +2,20 @@
 
 Official repository
 -------------------
-The official repository requires a KDE developer account, we will ask regular
-contributors to get an account and work on the KDE repository.
+The official repository is hosted on KDE Invent:
 
     https://invent.kde.org/education/gcompris
 
-For new developers and those interested only in smaller contributions use the
-https://phabricator.kde.org/ or GitHub repository.
+Create a KDE Identity account, fork the project on KDE Invent, push a topic
+branch to your fork, and open a merge request against the official repository.
+Regular contributors can request developer access and work directly on KDE
+repositories.
 
 
 Source code from GitHub
 -----------------------
-Checkout the source code by cloning it from GitHub
+The GitHub repository is a mirror. It is useful for browsing and cloning, but
+KDE Invent is the preferred place for merge requests.
 
     git clone https://github.com/gcompris/GCompris-qt.git
 
@@ -113,7 +115,56 @@ On Windows, the build is done using Ninja, MinGW and OpenSSL provided by Qt Main
 
 For Android, install Qt with the Android flavor you want from Qt Maintenance tool and run the script in tools to build for armeabi-v7a (./tools/android_build_all_apk.sh) or arm64-v8a (./tools/android_build_all_apk_64.sh). It takes the Qt root folder as argument (~/Qt/6.5.3/ for example).
 
+macOS
+-----
+Install the build tools and Qt 6 libraries. With Homebrew:
+
+    brew install cmake ninja qt pkgconf openssl@3
+
+Configure a local standalone build with the Homebrew Qt prefix. GCompris uses
+AAC audio assets on Apple by default; use OGG if the local environment does not
+provide the conversion tools required for AAC packaging.
+
+    cmake -S . -B build-macos -G Ninja \
+          -DCMAKE_PREFIX_PATH=/opt/homebrew \
+          -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3 \
+          -DCOMPRESSED_AUDIO=ogg
+    cmake --build build-macos --parallel
+    cmake --install build-macos --prefix /Applications
+
+If building from a source archive instead of a full git checkout, make sure the
+external qml-box2d dependency exists:
+
+    git clone https://github.com/qml-box2d/qml-box2d.git external/qml-box2d/
+
+The standalone bundle must contain Qt's `tls` plugins and the OpenSSL libraries
+used by Qt. If updating external assets fails with
+`Download error (code: 99): TLS initialization failed`, check that the installed
+bundle contains and can load the Qt TLS backend, for example:
+
+    ls /Applications/gcompris-qt.app/Contents/Plugins/tls
+    otool -L /Applications/gcompris-qt.app/Contents/Plugins/tls/libqopensslbackend.dylib
+
+For local testing on macOS, ad-hoc sign the installed bundle after installation.
+Sign nested Mach-O files first, then the bundle, otherwise macOS can terminate
+the app or a Qt plugin with `Code Signature Invalid`.
+
+    chmod -R u+w /Applications/gcompris-qt.app
+    xattr -cr /Applications/gcompris-qt.app
+    find /Applications/gcompris-qt.app -type f -print0 | while IFS= read -r -d '' file; do
+        if file -b "$file" | grep -q "Mach-O" && [ "$file" != "/Applications/gcompris-qt.app/Contents/MacOS/gcompris-qt" ]; then
+            codesign --force --sign - "$file"
+        fi
+    done
+    codesign --force --deep --sign - /Applications/gcompris-qt.app
+    codesign --verify --deep --strict --verbose=2 /Applications/gcompris-qt.app
+
+Ad-hoc signing is only for a local developer build. Public macOS downloads need
+a Developer ID signature and Apple notarization, and should be produced through
+KDE release infrastructure. KDE's Craft tooling is the usual cross-platform
+packaging entry point for KDE applications and can create macOS DMG packages.
+
 More Details
 ------------
 Go To this Link:
-          hhttps://invent.kde.org/education/gcompris/-/wikis/Developers-corner/
+          https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/

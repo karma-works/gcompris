@@ -73,6 +73,7 @@ set(_qml_plugins
     set(_app gcompris-teachers.app)
     set(_qtconf_destdir ${_app}/Contents/Resources)
     set(_qt_plugins_destdir ${_app}/Contents/plugins)
+    set(_qt_plugins2_destdir ${_app}/Contents/Plugins)
     set(_qt_qml_destdir ${_app}/Contents/qml)
     set(GCOMPRIS_BUNDLE "\${CMAKE_INSTALL_PREFIX}/${_app}")
     set_target_properties(gcompris-teachers PROPERTIES
@@ -88,6 +89,7 @@ set(_qml_plugins
   else()
     set(_qtconf_destdir bin)
     set(_qt_plugins_destdir bin/plugins)
+    set(_qt_plugins2_destdir ${_qt_plugins_destdir})
     set(_qt_qml_destdir bin/qml)
     if(CMAKE_HOST_WIN32)
       set(GCOMPRIS_BUNDLE "\${CMAKE_INSTALL_PREFIX}/bin/${GCOMPRIS_TEACHERS_EXECUTABLE_NAME}.exe")
@@ -105,11 +107,7 @@ set(_qml_plugins
     list(APPEND GCOMPRIS_OTHER_LIBS ${_lib})
   endforeach()
   foreach(_plugin ${_qt_plugins2})
-    if(APPLE)
-      installQtPlugin2(${_plugin} ${_qt_plugins_destdir}/../Plugins _lib)
-    else()
-      installQtPlugin2(${_plugin} ${_qt_plugins_destdir} _lib)
-    endif()
+    installQtPlugin2(${_plugin} ${_qt_plugins2_destdir} _lib)
     list(APPEND GCOMPRIS_OTHER_LIBS ${_lib})
   endforeach()
 

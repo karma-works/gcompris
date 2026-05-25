@@ -1,8 +1,13 @@
+> **This is a fork of the official [GCompris](https://gcompris.net) for macOS.** The official project only provides outdated binaries for MacOS and [does not accept AI-generated code contributions](https://invent.kde.org/education/gcompris/-/blob/master/HACKING). This fork is based on the latest upstream version and works on modern macOS. **Any contributions are welcome.**
+>
+> Original repository: https://invent.kde.org/education/gcompris
+
 # [GCompris](https://gcompris.net)
 
 <img src="src/core/resource/gcompris-logo-full.svg"  width="320" height="114" alt="GCompris logo">
 
 ## Presentation
+
 [GCompris](https://gcompris.net) is a high quality educational software suite,
 including a large number of activities for children aged 2 to 10.
 Some of the activities are game orientated, but still educational.
@@ -37,10 +42,10 @@ GCompris provides some tools for teachers/educators to easily add activities.
 
 You can help by:
 
-* [Creating new activities](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/Development-process).
-* [Translating GCompris](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/How-to-translate).
-* [Recording voices](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/How-to-translate/Voice-translation).
-* [Just giving your ideas](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/Ideas-for-activities).
+- [Creating new activities](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/Development-process).
+- [Translating GCompris](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/How-to-translate).
+- [Recording voices](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/How-to-translate/Voice-translation).
+- [Just giving your ideas](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/Ideas-for-activities).
 
 Get more information on our [developer's wiki](https://invent.kde.org/education/gcompris/-/wikis/Developers-corner/).
 
