@@ -1,0 +1,203 @@
+# SPDX-FileCopyrightText: 2026 GCompris contributors
+# SPDX-License-Identifier: CC0-1.0
+#
+# Builds an ad-hoc signed macOS DMG and publishes it as a GitHub Release.
+# Triggers on version tags (v*.*) and manual workflow_dispatch.
+#
+# No secrets required — uses the built-in GITHUB_TOKEN for releases.
+
+name: macOS Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to release (e.g. v26.1)'
+        required: true
+
+jobs:
+  build-macos-arm64:
+    runs-on: macos-14   # Apple Silicon (arm64)
+    permissions:
+      contents: write   # needed to create GitHub Releases
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
+          modules: 'qtmultimedia qtcharts qtsensors'
+          cache: true
+
+      - name: Install dependencies
+        run: brew install p7zip gettext openssl@3
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DQt6_DIR="${Qt6_DIR}" \
+            -DBUILD_STANDALONE=ON \
+            -DPACKAGE_GCOMPRIS=ON \
+            -DPACKAGE_SERVER=OFF \
+            -DCOMPRESSED_AUDIO=aac \
+            -DQML_BOX2D_MODULE=submodule \
+            -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Download pre-built audio bundles
+        run: cmake --build build --target DlAndInstallBundledConvertedOggs
+
+      - name: Build
+        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu)
+
+      - name: Ad-hoc sign application bundle
+        # Ad-hoc signing (--sign -) marks the bundle as signed without requiring
+        # an Apple Developer account. Combined with quarantine removal in the
+        # Homebrew cask preflight, this prevents Gatekeeper from blocking the app.
+        run: |
+          APP="build/bin/gcompris-qt.app"
+
+          find "$APP" \( -name "*.dylib" -o -name "*.so" \) | sort -r | while read f; do
+            codesign --force --sign - "$f"
+          done
+          find "$APP" -name "*.framework" -prune | sort -r | while read f; do
+            codesign --force --sign - "$f"
+          done
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep "$APP"
+
+      - name: Build DMG package
+        run: cmake --build build --target package
+
+      - name: Rename and checksum DMG
+        run: |
+          MAJOR=$(grep 'set(GCOMPRIS_MAJOR_VERSION' CMakeLists.txt | grep -o '[0-9]*')
+          MINOR=$(grep 'set(GCOMPRIS_MINOR_VERSION' CMakeLists.txt | grep -o '[0-9]*')
+          VERSION="${MAJOR}.${MINOR}"
+          SRC="build/gcompris-qt-${VERSION}-Darwin.dmg"
+          DEST="build/gcompris-qt-${VERSION}-macOS-arm64.dmg"
+          mv "$SRC" "$DEST"
+          shasum -a 256 "$DEST" | tee "${DEST}.sha256"
+          echo "DMG_PATH=${DEST}" >> "$GITHUB_ENV"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.ref_name || inputs.tag }}"
+          # Create release if it doesn't exist yet (arm64 job may run before x86_64)
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "GCompris $VERSION (unofficial macOS build)" \
+              --notes "Unofficial macOS build of GCompris $VERSION.
+
+**Installation via Homebrew (recommended):**
+\`\`\`
+brew tap YOUR_USERNAME/gcompris
+brew install --cask gcompris
+\`\`\`
+
+**Manual install:** Download the DMG, open it, drag GCompris to Applications.
+If macOS blocks the app, go to System Settings → Privacy & Security → Open Anyway."
+
+          gh release upload "$TAG" \
+            "$DMG_PATH" \
+            "${DMG_PATH}.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+  build-macos-x86_64:
+    runs-on: macos-13   # Intel (x86_64)
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
+          modules: 'qtmultimedia qtcharts qtsensors'
+          cache: true
+
+      - name: Install dependencies
+        run: brew install p7zip gettext openssl@3
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DQt6_DIR="${Qt6_DIR}" \
+            -DBUILD_STANDALONE=ON \
+            -DPACKAGE_GCOMPRIS=ON \
+            -DPACKAGE_SERVER=OFF \
+            -DCOMPRESSED_AUDIO=aac \
+            -DQML_BOX2D_MODULE=submodule \
+            -DCMAKE_OSX_ARCHITECTURES=x86_64
+
+      - name: Download pre-built audio bundles
+        run: cmake --build build --target DlAndInstallBundledConvertedOggs
+
+      - name: Build
+        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu)
+
+      - name: Ad-hoc sign application bundle
+        run: |
+          APP="build/bin/gcompris-qt.app"
+
+          find "$APP" \( -name "*.dylib" -o -name "*.so" \) | sort -r | while read f; do
+            codesign --force --sign - "$f"
+          done
+          find "$APP" -name "*.framework" -prune | sort -r | while read f; do
+            codesign --force --sign - "$f"
+          done
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep "$APP"
+
+      - name: Build DMG package
+        run: cmake --build build --target package
+
+      - name: Rename and checksum DMG
+        run: |
+          MAJOR=$(grep 'set(GCOMPRIS_MAJOR_VERSION' CMakeLists.txt | grep -o '[0-9]*')
+          MINOR=$(grep 'set(GCOMPRIS_MINOR_VERSION' CMakeLists.txt | grep -o '[0-9]*')
+          VERSION="${MAJOR}.${MINOR}"
+          SRC="build/gcompris-qt-${VERSION}-Darwin.dmg"
+          DEST="build/gcompris-qt-${VERSION}-macOS-x86_64.dmg"
+          mv "$SRC" "$DEST"
+          shasum -a 256 "$DEST" | tee "${DEST}.sha256"
+          echo "DMG_PATH=${DEST}" >> "$GITHUB_ENV"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.ref_name || inputs.tag }}"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "GCompris $VERSION (unofficial macOS build)" \
+              --notes "Unofficial macOS build of GCompris $VERSION."
+
+          gh release upload "$TAG" \
+            "$DMG_PATH" \
+            "${DMG_PATH}.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
