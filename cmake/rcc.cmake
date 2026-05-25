@@ -58,7 +58,7 @@ function(GCOMPRIS_ADD_RCC resource_path)
                      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
   if(CMAKE_HOST_APPLE)
-    install(FILES ${CREATED_RCC} DESTINATION ${GCOMPRIS_EXECUTABLE_NAME}.app/Contents/MacOS/rcc)
+    install(FILES ${CREATED_RCC} DESTINATION ${GCOMPRIS_EXECUTABLE_NAME}.app/Contents/Resources/rcc)
   elseif(HAIKU)
     install(FILES ${CREATED_RCC} DESTINATION ${_data_dest_dir}/rcc)
   else()

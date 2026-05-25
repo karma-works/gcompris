@@ -62,12 +62,22 @@ int main(int argc, char *argv[])
 
     // add a variable to disable default fullscreen on Mac, see below..
 #if defined(Q_OS_MACOS)
-    // Sandboxing on MacOSX as documented in:
+    // Sandboxing on macOS as documented in:
     // https://doc.qt.io/qt-5/osx-deployment.html
-    QDir dir(QGuiApplication::applicationDirPath());
-    dir.cdUp();
-    dir.cd("Plugins");
-    QGuiApplication::setLibraryPaths(QStringList(dir.absolutePath()));
+    // Include both "plugins" (CMake install dir for standard Qt plugins)
+    // and "Plugins" (additional plugins like tls, multimedia) to handle
+    // both case-sensitive and case-insensitive filesystems.
+    QDir appDir(QGuiApplication::applicationDirPath());
+    appDir.cdUp();
+    QStringList pluginPaths;
+    QDir p1(appDir);
+    if (p1.cd("plugins"))
+        pluginPaths << p1.absolutePath();
+    QDir p2(appDir);
+    if (p2.cd("Plugins"))
+        pluginPaths << p2.absolutePath();
+    if (!pluginPaths.isEmpty())
+        QGuiApplication::setLibraryPaths(pluginPaths);
 #endif
 
     // Local scope for config

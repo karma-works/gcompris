@@ -273,7 +273,7 @@ if(NOT SKIP_TRANSLATIONS)
 endif()
 
 if(CMAKE_HOST_APPLE)
-  install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${_bundle_bin})
+  install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${_bundle_bin}/../Resources)
 elseif(ANDROID)
   install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${CMAKE_INSTALL_DATADIR})
 else()
@@ -440,4 +440,3 @@ add_custom_target(updateReleaseDate
   DEPENDS doUpdateReleaseDate
   COMMENT "Run the scripts to bump the version if not already done. It assumes the changelog is already created for this version."
   )
-
