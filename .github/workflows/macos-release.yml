@@ -95,21 +95,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ github.ref_name || inputs.tag }}"
-          # Create release if it doesn't exist yet (arm64 job may run before x86_64)
+          cat > /tmp/release-notes.md << 'NOTES'
+          Unofficial macOS build of GCompris. Ad-hoc signed, no Apple Developer account required.
+
+          **Install via Homebrew (recommended):**
+          ```
+          brew tap karma-works/gcompris
+          brew install --cask gcompris
+          ```
+
+          **Manual install:** Download the DMG, open it, drag GCompris to Applications.
+          If macOS blocks the app, go to System Settings → Privacy & Security → Open Anyway.
+          NOTES
+
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "GCompris $VERSION (unofficial macOS build)" \
-              --notes "Unofficial macOS build of GCompris $VERSION.
-
-**Installation via Homebrew (recommended):**
-\`\`\`
-brew tap YOUR_USERNAME/gcompris
-brew install --cask gcompris
-\`\`\`
-
-**Manual install:** Download the DMG, open it, drag GCompris to Applications.
-If macOS blocks the app, go to System Settings → Privacy & Security → Open Anyway."
+              --notes-file /tmp/release-notes.md
 
           gh release upload "$TAG" \
             "$DMG_PATH" \
@@ -190,11 +193,12 @@ If macOS blocks the app, go to System Settings → Privacy & Security → Open A
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ github.ref_name || inputs.tag }}"
+          TAG="${{ github.ref_name || inputs.tag }}"
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "GCompris $VERSION (unofficial macOS build)" \
-              --notes "Unofficial macOS build of GCompris $VERSION."
+              --notes "Unofficial macOS build of GCompris $VERSION (x86_64)."
 
           gh release upload "$TAG" \
             "$DMG_PATH" \
