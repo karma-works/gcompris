@@ -156,8 +156,10 @@ if(SHIP_SYSTEM_ICU)
 endif()
 
 find_package(OpenSSL)
-# OpenSSL will be compiled as external_project for android
-if(NOT ANDROID)
+# OpenSSL will be compiled as external_project for android. Qt for
+# WebAssembly provides the browser TLS stack, so a native OpenSSL package is
+# not expected there.
+if(NOT ANDROID AND NOT EMSCRIPTEN)
   set_package_properties(OpenSSL PROPERTIES TYPE REQUIRED)
 endif()
 
@@ -180,9 +182,20 @@ if(ECM_FOUND)
     endif()
 endif()
 
-option(PACKAGE_GCOMPRIS "Package GCompris (default)" ON)
+if(EMSCRIPTEN)
+  set(_gcompris_default_build_server OFF)
+  set(_gcompris_default_package OFF)
+else()
+  set(_gcompris_default_build_server ON)
+  set(_gcompris_default_package ON)
+endif()
 
-option(BUILD_SERVER "Build the server along the application" ON)
+option(PACKAGE_GCOMPRIS "Package GCompris (default)" ${_gcompris_default_package})
+option(GCOMPRIS_WASM_PWA "Generate a Progressive Web App bundle for WebAssembly builds" ${EMSCRIPTEN})
+set(GCOMPRIS_WASM_DEFAULT_LOCALE "de_DE" CACHE STRING "Default locale passed to the WebAssembly PWA")
+set(GCOMPRIS_WASM_PWA_DIST_DIR "${CMAKE_BINARY_DIR}/pwa" CACHE PATH "Output directory for the generated WebAssembly PWA")
+
+option(BUILD_SERVER "Build the server along the application" ${_gcompris_default_build_server})
 option(PACKAGE_SERVER "Package the server" OFF)
 
 if(BUILD_SERVER)
@@ -297,7 +310,9 @@ endif()
 
 option(WITH_KIOSK_MODE "Set the kiosk mode by default" OFF)
 
-if(WIN32)
+if(EMSCRIPTEN)
+  set(COMPRESSED_AUDIO "ogg" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
+elseif(WIN32)
   set(COMPRESSED_AUDIO "mp3" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
 elseif(APPLE)
   set(COMPRESSED_AUDIO "aac" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
@@ -346,7 +361,12 @@ else()
 endif()
 
 # predownload assets (voices and images) and install them in the rcc folder
-set(DOWNLOAD_ASSETS "" CACHE STRING "Download and packages images and voices. use a list like: words,en,fr,pt_BR,music to retrieve multiple files")
+if(EMSCRIPTEN)
+  set(_gcompris_default_download_assets "words,music,de")
+else()
+  set(_gcompris_default_download_assets "")
+endif()
+set(DOWNLOAD_ASSETS "${_gcompris_default_download_assets}" CACHE STRING "Download and packages images and voices. use a list like: words,en,fr,pt_BR,music to retrieve multiple files")
 add_custom_command(
     OUTPUT predownloadAssets
     COMMAND python3 tools/download-assets.py ${DOWNLOAD_ASSETS} ${COMPRESSED_AUDIO} ${GCOMPRIS_ASSETS_DIR}
@@ -425,6 +445,35 @@ add_custom_target(binaries)
 add_dependencies(binaries ${GCOMPRIS_EXECUTABLE_NAME} rcc_activities all_activities)
 if(WITH_RCC)
   add_dependencies(binaries rcc_menu rcc_core)
+endif()
+
+if(EMSCRIPTEN AND GCOMPRIS_WASM_PWA)
+  add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} rcc_activities all_activities getAssets)
+  if(WITH_RCC)
+    add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} rcc_menu rcc_core)
+  endif()
+  if(TARGET BuildTranslationsgcompris_qt)
+    add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} BuildTranslationsgcompris_qt)
+  endif()
+
+  target_link_options(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE
+    "SHELL:-s ALLOW_MEMORY_GROWTH=1"
+    "SHELL:-s INITIAL_MEMORY=256MB"
+    "SHELL:--preload-file ${CMAKE_BINARY_DIR}/${_data_dest_dir}@/${_data_dest_dir}"
+  )
+
+  add_custom_target(wasm_pwa_dist
+    COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/generate-wasm-pwa.py
+      --runtime-dir ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+      --data-dir ${CMAKE_BINARY_DIR}/${_data_dest_dir}
+      --output-dir ${GCOMPRIS_WASM_PWA_DIST_DIR}
+      --app-name ${GCOMPRIS_EXECUTABLE_NAME}
+      --version ${GCOMPRIS_VERSION}
+      --default-locale ${GCOMPRIS_WASM_DEFAULT_LOCALE}
+    DEPENDS binaries
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generate installable offline PWA bundle in ${GCOMPRIS_WASM_PWA_DIST_DIR}"
+  )
 endif()
 
 # Add a target to automatise the filling of the files requiring info for the releases: appdata/publiccode release date, fastlane changelog

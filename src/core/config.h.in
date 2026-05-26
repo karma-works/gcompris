@@ -21,6 +21,8 @@
 #define GCOMPRIS_DATA_FOLDER "../Resources"
 #elif  Q_OS_IOS
 #define GCOMPRIS_DATA_FOLDER "."
+#elif  defined(Q_OS_WASM)
+#define GCOMPRIS_DATA_FOLDER "share/@GCOMPRIS_EXECUTABLE_NAME@"
 #else
 #define GCOMPRIS_DATA_FOLDER "../@_data_dest_dir@"
 #endif
