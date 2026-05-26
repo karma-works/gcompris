@@ -294,6 +294,10 @@ int main(int argc, char *argv[])
 
     // Set the renderer used
     QString renderer = ApplicationSettings::getInstance()->renderer();
+#if defined(Q_OS_WASM)
+    // WebGL is the only rendering backend available in the browser sandbox.
+    renderer = QLatin1String("opengl");
+#else
     if (renderer == QLatin1String("opengl")) {
         QOpenGLContext checkContext;
         if (!checkContext.create()) {
@@ -301,6 +305,7 @@ int main(int argc, char *argv[])
             renderer = QLatin1String("software");
         }
     }
+#endif
     ApplicationInfo::getInstance()->setUseSoftwareRenderer(renderer == QLatin1String("software"));
     QQuickWindow::setGraphicsApi(existingRenderers[renderer]);
 

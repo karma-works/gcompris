@@ -35,7 +35,6 @@ set(gcompris_SRCS
   GImageGrabber.cpp
   GImageGrabber.h
   config.h.in
-  ClientNetworkMessages.cpp
   ClientNetworkMessages.h
   netconst.h
   Sequence.cpp
@@ -55,6 +54,12 @@ set(gcompris_SRCS
   synth/waveform.cpp
   synth/waveform.h
 )
+if(EMSCRIPTEN)
+  list(APPEND gcompris_SRCS ClientNetworkMessagesStub.cpp)
+else()
+  list(APPEND gcompris_SRCS ClientNetworkMessages.cpp)
+endif()
+
 if(WITH_RCC)
   list(APPEND gcompris_SRCS GComprisPlugin.cpp GComprisPlugin.h)
 endif()
@@ -114,6 +119,8 @@ endif()
 
 if(ANDROID)
   add_library(${GCOMPRIS_EXECUTABLE_NAME} SHARED main.cpp)
+elseif(EMSCRIPTEN)
+  add_executable(${GCOMPRIS_EXECUTABLE_NAME} main.cpp)
 elseif(CMAKE_HOST_APPLE)
   add_executable(${GCOMPRIS_EXECUTABLE_NAME} MACOSX_BUNDLE ${gcompris_RES} main.cpp)
 elseif(CMAKE_HOST_WIN32)

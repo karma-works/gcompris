@@ -13,6 +13,7 @@
 
 #include <QObject>
 #include <QtQml>
+#include <QAbstractSocket>
 #include "netconst.h"
 
 class QTcpSocket;

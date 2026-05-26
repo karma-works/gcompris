@@ -222,7 +222,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(WITH_RCC "Use rcc for activities instead of qml plugins" ON)
 
-option(WITH_DOWNLOAD "Internal download" ON)
+if(EMSCRIPTEN)
+  set(_gcompris_default_with_download OFF)
+else()
+  set(_gcompris_default_with_download ON)
+endif()
+option(WITH_DOWNLOAD "Internal download" ${_gcompris_default_with_download})
 # @FIXME These permissions should be removed if download is disable
 #        but it makes the application crash on exit (tested on Android 6)
 set(ANDROID_INTERNET_PERMISSION "<uses-permission android:name=\"android.permission.INTERNET\" />")
@@ -236,7 +241,9 @@ set(ANDROID_WIFI_BROADCAST_PERMISSION "<uses-permission android:name=\"android.p
 set(GRAPHICAL_RENDERER "auto" CACHE STRING "Policy for choosing the renderer backend [opengl|software|auto]")
 
 # Set output directory
-if(CMAKE_HOST_APPLE)
+# EMSCRIPTEN cross-compiles from any host, so check it before CMAKE_HOST_APPLE
+# to avoid picking up the macOS bundle layout when building WASM on a Mac.
+if(CMAKE_HOST_APPLE AND NOT EMSCRIPTEN)
   set(_bundle_bin gcompris-qt.app/Contents/MacOS)
   set(_data_dest_dir ${CMAKE_INSTALL_BINDIR}/${_bundle_bin}/../Resources)
 else()
@@ -249,13 +256,8 @@ if(ANDROID)
   set(GCOMPRIS_RCC_DIR ${CMAKE_BINARY_DIR}/android-build/assets/${_data_dest_dir}/rcc CACHE INTERNAL "" FORCE)
   set(ANDROID_PACKAGE "net.gcompris.full")
   add_subdirectory(android)
-elseif(CMAKE_HOST_APPLE)
-  # MacOSX build
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-  set(GCOMPRIS_TRANSLATIONS_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/translations CACHE INTERNAL "" FORCE)
-  set(GCOMPRIS_RCC_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/rcc CACHE INTERNAL "" FORCE)
 else()
-  # Desktop build
+  # Desktop, WebAssembly, and macOS builds all use the same output layout
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
   set(GCOMPRIS_TRANSLATIONS_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/translations CACHE INTERNAL "" FORCE)
   set(GCOMPRIS_RCC_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/rcc CACHE INTERNAL "" FORCE)
@@ -285,7 +287,7 @@ if(NOT SKIP_TRANSLATIONS)
   endif()
 endif()
 
-if(CMAKE_HOST_APPLE)
+if(CMAKE_HOST_APPLE AND NOT EMSCRIPTEN)
   install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${_bundle_bin}/../Resources)
 elseif(ANDROID)
   install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${CMAKE_INSTALL_DATADIR})
