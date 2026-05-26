@@ -18,7 +18,9 @@
 #include <QScreen>
 #include <QLocale>
 #include <QQuickWindow>
+#ifndef Q_OS_WASM
 #include <QSensor>
+#endif
 
 #include <QDebug>
 
@@ -99,7 +101,12 @@ ApplicationInfo::~ApplicationInfo()
 
 bool ApplicationInfo::sensorIsSupported(const QString &sensorType)
 {
+#ifndef Q_OS_WASM
     return QSensor::sensorTypes().contains(sensorType.toUtf8());
+#else
+    Q_UNUSED(sensorType)
+    return false;
+#endif
 }
 
 Qt::ScreenOrientation ApplicationInfo::getNativeOrientation()

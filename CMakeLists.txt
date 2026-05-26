@@ -98,7 +98,17 @@ endif()
 
 set(QT_MAJOR Qt6)
 
-set(QT_COMPONENTS Qml Quick Gui Multimedia Core Svg Network LinguistTools Sensors QuickControls2 QuickTemplates2 QmlWorkerScript)
+# Qt Sensors is not ported to WebAssembly; keep it optional for EMSCRIPTEN so
+# the build can proceed without it and fall back to no-op tilt/rotation support.
+# Qt Sensors and QmlWorkerScript are not ported to WebAssembly singlethread;
+# keep them optional for EMSCRIPTEN builds.
+if(EMSCRIPTEN)
+  set(QT_COMPONENTS Qml Quick Gui Multimedia Core Svg Network LinguistTools QuickControls2 QuickTemplates2)
+  set(QT_OPTIONAL_COMPONENTS Sensors QmlWorkerScript)
+else()
+  set(QT_COMPONENTS Qml Quick Gui Multimedia Core Svg Network LinguistTools Sensors QuickControls2 QuickTemplates2 QmlWorkerScript)
+  set(QT_OPTIONAL_COMPONENTS "")
+endif()
 
 find_package(QT NAMES Qt6)
 find_package(${QT_MAJOR} ${QT_REQUIRED_VERSION} COMPONENTS
@@ -108,6 +118,10 @@ set_package_properties(${QT_MAJOR} PROPERTIES TYPE REQUIRED)
 foreach(COMPONENT ${QT_COMPONENTS})
   set_package_properties(${QT_MAJOR}${COMPONENT} PROPERTIES TYPE REQUIRED)
 endforeach()
+
+if(QT_OPTIONAL_COMPONENTS)
+  find_package(${QT_MAJOR} ${QT_REQUIRED_VERSION} OPTIONAL_COMPONENTS ${QT_OPTIONAL_COMPONENTS})
+endif()
 
 set(QT_VERSION "${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH}")
 if(QT_VERSION VERSION_LESS "6.9.0")
