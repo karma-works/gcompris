@@ -61,9 +61,11 @@ cat <<EOF
 PWA build complete:
   $BUILD_DIR/pwa
 
-Serve it with:
+Serve locally (localhost only):
   python3 -m http.server 8000 -d "$BUILD_DIR/pwa"
+  # http://localhost:8000/
 
-Then open:
-  http://localhost:8000/
+Serve on Tailscale (flywheel1) with automatic HTTPS:
+  tools/serve-wasm-pwa.sh
+  # https://flywheel1.tail704fb4.ts.net/
 EOF
