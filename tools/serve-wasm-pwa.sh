@@ -4,12 +4,11 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Serve the built GCompris WASM PWA and expose it on the Tailscale network
-# (hostname: flywheel1) with automatic HTTPS via tailscale serve.
+# Serve the built GCompris WASM PWA and expose it on the Tailscale network.
 #
 # Usage:
 #   tools/serve-wasm-pwa.sh
-#   PORT=9000 tools/serve-wasm-pwa.sh    # use a different local port
+#   PORT=9000 tools/serve-wasm-pwa.sh
 #   PWA_DIR=/path/to/pwa tools/serve-wasm-pwa.sh
 
 set -euo pipefail
@@ -35,9 +34,17 @@ if [[ ! -f "$PWA_DIR/index.html" ]]; then
   exit 1
 fi
 
-# Start a local HTTP server that adds the COOP/COEP headers required for
-# SharedArrayBuffer (Qt WASM multithreaded builds) and sets application/wasm.
-# The server binds to 127.0.0.1 only; tailscale serve provides public HTTPS.
+# Kill any stale server already holding the port so re-runs always succeed.
+if command -v fuser >/dev/null 2>&1; then
+  fuser -k "${LOCAL_PORT}/tcp" 2>/dev/null || true
+  sleep 0.3
+fi
+
+# Get the Tailscale IP for this node so we can bind there directly.
+TS_IP=$(tailscale ip -4 2>/dev/null | head -1 || true)
+
+# Start a Python HTTP server bound to all interfaces (0.0.0.0).
+# Includes COOP/COEP headers for SharedArrayBuffer (Qt WASM multithreaded).
 PWA_DIR="$PWA_DIR" LOCAL_PORT="$LOCAL_PORT" python3 -c '
 import os, http.server, socketserver
 
@@ -47,12 +54,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
         super().end_headers()
     def log_message(self, fmt, *args):
-        pass  # silence per-request noise; errors still go to stderr
+        pass  # silence per-request noise
 
 directory = os.environ["PWA_DIR"]
 port      = int(os.environ["LOCAL_PORT"])
-addr      = ("127.0.0.1", port)
-with socketserver.TCPServer(addr, lambda *a, **kw: Handler(*a, directory=directory, **kw)) as srv:
+socketserver.TCPServer.allow_reuse_address = True
+with socketserver.TCPServer(("0.0.0.0", port), lambda *a, **kw: Handler(*a, directory=directory, **kw)) as srv:
     srv.serve_forever()
 ' &
 PYTHON_PID=$!
@@ -65,40 +72,59 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Give the Python server a moment to bind before tailscale tests it.
+# Wait for the server to bind.
 sleep 0.5
 
-# Derive Tailscale info once.
+# Collect Tailscale metadata.
 TAILNET=$(tailscale status --json \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('CurrentTailnet',{}).get('MagicDNSSuffix',''))" 2>/dev/null || true)
 TS_HOST=$(tailscale status --json \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('Self',{}).get('HostName','flywheel1'))" 2>/dev/null || true)
 
-# Try to expose via Tailscale HTTPS.  This requires "Serve" to be enabled in
-# the Tailscale admin console; if it isn't, fall back to local-only serving.
-TS_URL=""
-TS_SERVE_ERR=$(tailscale serve --bg "$LOCAL_PORT" 2>&1) && TS_SERVE_OK=1 || TS_SERVE_OK=0
-
-if [[ "$TS_SERVE_OK" -eq 1 && -n "$TAILNET" && -n "$TS_HOST" ]]; then
-  TS_URL="https://${TS_HOST}.${TAILNET}/"
+# Try to set up Tailscale HTTPS (requires "Serve" to be enabled in the admin
+# console; falls back gracefully if it is not available).
+TS_HTTPS_URL=""
+if TS_SERVE_ERR=$(tailscale serve --bg "$LOCAL_PORT" 2>&1); then
+  if [[ -n "$TAILNET" && -n "$TS_HOST" ]]; then
+    TS_HTTPS_URL="https://${TS_HOST}.${TAILNET}/"
+  fi
 fi
 
 echo
 echo "GCompris WASM PWA is live:"
-if [[ -n "$TS_URL" ]]; then
-  echo "  $TS_URL   ← Tailscale HTTPS (PWA-installable)"
-else
-  echo "  Tailscale HTTPS not available."
-  if echo "$TS_SERVE_ERR" | grep -q "not enabled"; then
-    ENABLE_URL=$(echo "$TS_SERVE_ERR" | grep -Eo 'https://[^ ]+' | head -1)
-    echo "  Enable Tailscale Serve for this node at:"
-    echo "    ${ENABLE_URL:-https://login.tailscale.com/admin/machines}"
-    echo "  Then re-run this script."
+echo
+
+if [[ -n "$TS_HTTPS_URL" ]]; then
+  echo "  $TS_HTTPS_URL"
+  echo "    ↑ Tailscale HTTPS — installable as PWA, service worker enabled"
+  echo
+fi
+
+if [[ -n "$TS_IP" && -n "$TS_HOST" && -n "$TAILNET" ]]; then
+  echo "  http://${TS_HOST}.${TAILNET}:${LOCAL_PORT}/"
+  echo "  http://${TS_IP}:${LOCAL_PORT}/"
+  echo "    ↑ Tailscale HTTP — app works, service worker / PWA install disabled"
+  echo
+fi
+
+echo "  http://127.0.0.1:${LOCAL_PORT}/"
+echo "    ↑ localhost only"
+echo
+
+if [[ -z "$TS_HTTPS_URL" ]]; then
+  if echo "${TS_SERVE_ERR:-}" | grep -q "not enabled"; then
+    ENABLE_URL=$(echo "$TS_SERVE_ERR" | grep -Eo 'https://[^ ]+' | head -1 || true)
+    cat <<EOF
+Note: Tailscale Serve (HTTPS) is not enabled on this tailnet.
+For PWA install + service worker, enable it once at:
+  ${ENABLE_URL:-https://login.tailscale.com/admin/machines}
+Then re-run this script.
+
+EOF
   fi
 fi
-echo "  http://127.0.0.1:${LOCAL_PORT}/   (local fallback)"
-echo
-echo "Press Ctrl+C to stop and remove the tailscale serve rule."
+
+echo "Press Ctrl+C to stop."
 echo
 
 wait "$PYTHON_PID"
