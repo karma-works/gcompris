@@ -68,19 +68,33 @@ trap cleanup EXIT INT TERM
 # Give the Python server a moment to bind before tailscale tests it.
 sleep 0.5
 
-# Expose via Tailscale HTTPS (flywheel1.<tailnet>.ts.net → 127.0.0.1:LOCAL_PORT).
-tailscale serve --bg "$LOCAL_PORT" >/dev/null
-
-# Derive the public URL from tailscale status.
+# Derive Tailscale info once.
 TAILNET=$(tailscale status --json \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('CurrentTailnet',{}).get('MagicDNSSuffix',''))" 2>/dev/null || true)
 TS_HOST=$(tailscale status --json \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('Self',{}).get('HostName','flywheel1'))" 2>/dev/null || true)
 
+# Try to expose via Tailscale HTTPS.  This requires "Serve" to be enabled in
+# the Tailscale admin console; if it isn't, fall back to local-only serving.
+TS_URL=""
+TS_SERVE_ERR=$(tailscale serve --bg "$LOCAL_PORT" 2>&1) && TS_SERVE_OK=1 || TS_SERVE_OK=0
+
+if [[ "$TS_SERVE_OK" -eq 1 && -n "$TAILNET" && -n "$TS_HOST" ]]; then
+  TS_URL="https://${TS_HOST}.${TAILNET}/"
+fi
+
 echo
 echo "GCompris WASM PWA is live:"
-if [[ -n "$TAILNET" && -n "$TS_HOST" ]]; then
-  echo "  https://${TS_HOST}.${TAILNET}/"
+if [[ -n "$TS_URL" ]]; then
+  echo "  $TS_URL   ← Tailscale HTTPS (PWA-installable)"
+else
+  echo "  Tailscale HTTPS not available."
+  if echo "$TS_SERVE_ERR" | grep -q "not enabled"; then
+    ENABLE_URL=$(echo "$TS_SERVE_ERR" | grep -Eo 'https://[^ ]+' | head -1)
+    echo "  Enable Tailscale Serve for this node at:"
+    echo "    ${ENABLE_URL:-https://login.tailscale.com/admin/machines}"
+    echo "  Then re-run this script."
+  fi
 fi
 echo "  http://127.0.0.1:${LOCAL_PORT}/   (local fallback)"
 echo
