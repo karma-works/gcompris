@@ -2,7 +2,7 @@ name: Deploy GCompris WASM PWA to GitHub Pages
 
 on:
   push:
-    branches: [feature/wasm-pwa-german]
+    branches: [main]
     paths:
       - 'pwa/**'
       - '.github/workflows/deploy-wasm-pwa.yml'
