@@ -170,4 +170,56 @@ bool File::rmpath(const QString &path)
     return QFile::remove(sanitizeUrl(path));
 }
 
+#ifdef Q_OS_WASM
+#include <emscripten/val.h>
+#include <private/qstdweb_p.h>
+#include <QMimeDatabase>
+
+using StringHash = QHash<QString, QString>;
+Q_GLOBAL_STATIC(StringHash, s_blobUrlCache)
+
+QString File::toBlobUrl(const QString &path)
+{
+    const QString filePath = sanitizeUrl(path); // "qrc:/foo" → ":/foo"
+
+    if (!filePath.startsWith(QLatin1String(":/")))
+        return path; // Not a Qt resource — pass through unchanged
+
+    auto it = s_blobUrlCache->constFind(filePath);
+    if (it != s_blobUrlCache->constEnd())
+        return it.value();
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly))
+        return path;
+
+    const QByteArray data = file.readAll();
+    file.close();
+
+    if (data.isEmpty())
+        return path;
+
+    QMimeDatabase db;
+    const std::string mimeType = db.mimeTypeForData(data).name().toStdString();
+
+    const qstdweb::Blob blob = qstdweb::Blob::copyFrom(
+        data.constData(), static_cast<uint32_t>(data.size()), mimeType);
+
+    if (blob.val().isNull())
+        return path;
+
+    const std::string blobUrl = emscripten::val::global("URL")
+        .call<std::string>("createObjectURL", blob.val());
+
+    const QString result = QString::fromStdString(blobUrl);
+    s_blobUrlCache->insert(filePath, result);
+    return result;
+}
+#else
+QString File::toBlobUrl(const QString &path)
+{
+    return path;
+}
+#endif
+
 #include "moc_File.cpp"

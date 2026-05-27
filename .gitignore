@@ -15,3 +15,6 @@ src/activities/activities_out.txt
 .kdev4/
 *.kdev4
 *autosave
+.gstack/
+# WASM PWA: share/ is embedded in gcompris-qt.data (MEMFS preload); no need to track separately
+pwa/share/

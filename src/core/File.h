@@ -110,6 +110,22 @@ public:
      */
     Q_INVOKABLE static bool rmpath(const QString &path);
 
+    /**
+     * Converts a qrc:// resource path to a browser-accessible blob:// URL.
+     *
+     * On WebAssembly, Qt's QWasmAudioOutput only handles file:// and http(s)://
+     * sources. qrc:// resources need to be read via QFile and turned into a
+     * Blob URL so the HTML <audio> element can load them.
+     *
+     * Results are cached so repeated calls for the same path are cheap.
+     *
+     * On non-WASM platforms this is a no-op that returns @p path unchanged.
+     *
+     * @param path qrc:// or :/ resource path to convert.
+     * @returns blob:// URL on WASM, original @p path elsewhere.
+     */
+    Q_INVOKABLE static QString toBlobUrl(const QString &path);
+
     /// @cond INTERNAL_DOCS
     QString name() const;
     void setName(const QString &str);

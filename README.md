@@ -3,7 +3,7 @@
 > Original repository: https://invent.kde.org/education/gcompris
 >
 > **[▶ Try it live in your browser (WebAssembly PWA)](https://karma-works.github.io/gcompris/)**
-> (be patient, the app needs to download about 200MB)
+> ⏳ First load downloads ~200 MB of assets — be patient, it can take a minute or two depending on your connection.
 
 
 <img src="docs/gcompris-web-screenshot.png" alt="GCompris Screenshot">

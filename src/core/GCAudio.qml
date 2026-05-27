@@ -142,7 +142,9 @@ Item {
         if(file) {
             // Setting the source to "" on Linux fix a case where the sound is no more played if you play twice the same sound in a row
             source = ""
-            source = file
+            // On WASM, QWasmAudioOutput only handles file:// and http(s)://;
+            // toBlobUrl() converts qrc:// resources to blob:// URLs the browser can load.
+            source = fileId.toBlobUrl(file)
         }
         if(!muted) {
             audio.play()
@@ -222,7 +224,7 @@ Item {
             if (ApplicationInfo.platform !== ApplicationInfo.UbuntuTouchOS) {
                source = ""
             }
-            source = nextFile
+            source = fileId.toBlobUrl(nextFile)
             if(!muted)
                 audio.play()
         }
