@@ -327,7 +327,8 @@ endif()
 option(WITH_KIOSK_MODE "Set the kiosk mode by default" OFF)
 
 if(EMSCRIPTEN)
-  set(COMPRESSED_AUDIO "ogg" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
+  # Chrome/WebKit do not support audio/vorbis (OGG); use MP3 for broad browser support.
+  set(COMPRESSED_AUDIO "mp3" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
 elseif(WIN32)
   set(COMPRESSED_AUDIO "mp3" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
 elseif(APPLE)

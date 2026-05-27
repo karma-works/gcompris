@@ -1,4 +1,4 @@
-const CACHE_NAME = "gcompris-26.1-625a3398bcc6";
+const CACHE_NAME = "gcompris-26.1-a056d775b271";
 const PRECACHE_URLS = [
   "gcompris-qt.html",
   "gcompris-qt.js",
@@ -56,7 +56,10 @@ const PRECACHE_URLS = [
   "share/gcompris-qt/rcc/core.rcc",
   "share/gcompris-qt/rcc/crane.rcc",
   "share/gcompris-qt/rcc/data3/backgroundMusic/Contents",
+  "share/gcompris-qt/rcc/data3/backgroundMusic/backgroundMusic-mp3-2024-03-19-11-10-30.rcc",
   "share/gcompris-qt/rcc/data3/backgroundMusic/backgroundMusic-ogg-2024-03-19-11-10-30.rcc",
+  "share/gcompris-qt/rcc/data3/voices-mp3/Contents",
+  "share/gcompris-qt/rcc/data3/voices-mp3/voices-de-2026-01-30-16-42-03.rcc",
   "share/gcompris-qt/rcc/data3/voices-ogg/Contents",
   "share/gcompris-qt/rcc/data3/voices-ogg/voices-de-2026-01-30-16-42-03.rcc",
   "share/gcompris-qt/rcc/data3/words/Contents",

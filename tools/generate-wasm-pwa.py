@@ -132,6 +132,31 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
       }}
     }}
     window.addEventListener("load", init);
+
+    // Resume the Web Audio context on first user interaction to satisfy
+    // the browser autoplay policy.
+    function resumeAudio() {{
+      if (window.AudioContext || window.webkitAudioContext) {{
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (window._qtAudioContext) {{
+          window._qtAudioContext.resume();
+        }} else {{
+          const OrigAudioContext = AudioContext;
+          window.AudioContext = window.webkitAudioContext = function(...args) {{
+            const ctx = new OrigAudioContext(...args);
+            window._qtAudioContext = ctx;
+            return ctx;
+          }};
+          Object.setPrototypeOf(window.AudioContext, OrigAudioContext);
+        }}
+      }}
+      document.removeEventListener("click", resumeAudio);
+      document.removeEventListener("touchstart", resumeAudio);
+      document.removeEventListener("keydown", resumeAudio);
+    }}
+    document.addEventListener("click", resumeAudio);
+    document.addEventListener("touchstart", resumeAudio);
+    document.addEventListener("keydown", resumeAudio);
   </script>
 </body>
 </html>
