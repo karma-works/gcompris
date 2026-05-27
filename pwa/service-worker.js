@@ -1,4 +1,4 @@
-const CACHE_NAME = "gcompris-26.1-f43f172cb10b";
+const CACHE_NAME = "gcompris-26.1-9addae9f6570";
 const PRECACHE_URLS = [
   "gcompris-qt.html",
   "gcompris-qt.js",
@@ -9,6 +9,7 @@ const PRECACHE_URLS = [
   "manifest.webmanifest",
   "qtloader.js",
   "share/gcompris-qt/rcc/activities.rcc",
+  "share/gcompris-qt/rcc/activities_light.rcc",
   "share/gcompris-qt/rcc/adjacent_numbers.rcc",
   "share/gcompris-qt/rcc/advanced_colors.rcc",
   "share/gcompris-qt/rcc/algebra_by.rcc",

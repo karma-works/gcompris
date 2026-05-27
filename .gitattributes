@@ -1,3 +1,4 @@
 *.svg binary
+*.a binary
 *.data filter=lfs diff=lfs merge=lfs -text
 *.wasm filter=lfs diff=lfs merge=lfs -text

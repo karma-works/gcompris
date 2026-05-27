@@ -374,7 +374,7 @@ ActivityBase {
                 id: containerTexture
                 anchors.fill: parent
                 anchors.rightMargin: GCStyle.midBorder
-                source: Activity.url + "texture01.webp"
+                source: Activity.url + "texture01.jpg"
                 fillMode: Image.Tile
                 ListWidget {
                     id: availablePieces

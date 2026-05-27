@@ -190,6 +190,28 @@ if(ANDROID)
 endif()
 
 if(EMSCRIPTEN)
+  # WebP image plugin — Qt 6.9 WASM doesn't ship qtimageformats
+  set(WASM_WEBP_ROOT "${CMAKE_SOURCE_DIR}/wasm-libs/libwebp")
+  add_library(wasm_webp_plugin STATIC
+    "${CMAKE_SOURCE_DIR}/src/core/wasm_plugins/webp/main.cpp"
+    "${CMAKE_SOURCE_DIR}/src/core/wasm_plugins/webp/qwebphandler.cpp"
+  )
+  target_compile_definitions(wasm_webp_plugin PRIVATE QT_STATICPLUGIN)
+  target_include_directories(wasm_webp_plugin PRIVATE
+    "${WASM_WEBP_ROOT}/include"
+    "${CMAKE_SOURCE_DIR}/src/core/wasm_plugins/webp"
+  )
+  target_link_libraries(wasm_webp_plugin
+    ${QT_MAJOR}::Gui
+    "${WASM_WEBP_ROOT}/lib/libwebp.a"
+    "${WASM_WEBP_ROOT}/lib/libwebpdemux.a"
+    "${WASM_WEBP_ROOT}/lib/libwebpmux.a"
+    "${WASM_WEBP_ROOT}/lib/libsharpyuv.a"
+  )
+  target_link_libraries(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE wasm_webp_plugin)
+endif()
+
+if(EMSCRIPTEN)
   target_link_libraries(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE embind)
   add_custom_command(TARGET ${GCOMPRIS_EXECUTABLE_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

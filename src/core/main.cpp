@@ -34,6 +34,11 @@
 #include "ClientNetworkMessages.h"
 #include "netconst.h"
 
+#ifdef Q_OS_WASM
+#include <QtPlugin>
+Q_IMPORT_PLUGIN(QWebpPlugin)
+#endif
+
 int main(int argc, char *argv[])
 {
     // Disable it because we already support HDPI display natively
