@@ -133,30 +133,26 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
     }}
     window.addEventListener("load", init);
 
-    // Resume the Web Audio context on first user interaction to satisfy
-    // the browser autoplay policy.
-    function resumeAudio() {{
-      if (window.AudioContext || window.webkitAudioContext) {{
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (window._qtAudioContext) {{
-          window._qtAudioContext.resume();
-        }} else {{
-          const OrigAudioContext = AudioContext;
-          window.AudioContext = window.webkitAudioContext = function(...args) {{
-            const ctx = new OrigAudioContext(...args);
-            window._qtAudioContext = ctx;
-            return ctx;
-          }};
-          Object.setPrototypeOf(window.AudioContext, OrigAudioContext);
-        }}
+    // Qt's QWasmMediaPlayer uses <audio>.play() which browsers block until
+    // a user gesture occurs. Intercept every play() call: if it's rejected
+    // with NotAllowedError, queue the element and retry on first interaction.
+    (function () {{
+      const _play = HTMLMediaElement.prototype.play;
+      const pending = new Set();
+
+      HTMLMediaElement.prototype.play = function () {{
+        const p = _play.call(this);
+        if (p) p.catch(e => {{ if (e.name === "NotAllowedError") pending.add(this); }});
+        return p;
+      }};
+
+      function unlock() {{
+        pending.forEach(el => _play.call(el).catch(() => {{}}));
+        pending.clear();
+        ["click","touchstart","keydown"].forEach(t => document.removeEventListener(t, unlock));
       }}
-      document.removeEventListener("click", resumeAudio);
-      document.removeEventListener("touchstart", resumeAudio);
-      document.removeEventListener("keydown", resumeAudio);
-    }}
-    document.addEventListener("click", resumeAudio);
-    document.addEventListener("touchstart", resumeAudio);
-    document.addEventListener("keydown", resumeAudio);
+      ["click","touchstart","keydown"].forEach(t => document.addEventListener(t, unlock));
+    }})();
   </script>
 </body>
 </html>
