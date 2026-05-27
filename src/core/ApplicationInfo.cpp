@@ -366,7 +366,8 @@ QString ApplicationInfo::loadTranslation(const QString &applicationName, const Q
     if (!locales.contains(locale)) {
         qDebug() << "locale" << locale << "not supported, defaulting to" << GC_DEFAULT_LOCALE;
         locale = GC_DEFAULT_LOCALE;
-        ApplicationSettings::getInstance()->setLocale(locale);
+        // Do NOT call setLocale() here: it emits localeChanged() which calls
+        // switchLocale() which calls loadTranslation() — infinite recursion.
     }
 
     if (locale == GC_DEFAULT_LOCALE)

@@ -126,7 +126,10 @@ endif()
 if(ANDROID)
   add_library(${GCOMPRIS_EXECUTABLE_NAME} SHARED main.cpp)
 elseif(EMSCRIPTEN)
-  add_executable(${GCOMPRIS_EXECUTABLE_NAME} main.cpp)
+  # qt_add_executable (instead of add_executable) triggers Qt's finalization
+  # which generates the static plugin import file — required for QML modules
+  # (QtQuick, QtQml, etc.) to be found in a static WASM build.
+  qt_add_executable(${GCOMPRIS_EXECUTABLE_NAME} main.cpp)
 elseif(CMAKE_HOST_APPLE)
   add_executable(${GCOMPRIS_EXECUTABLE_NAME} MACOSX_BUNDLE ${gcompris_RES} main.cpp)
 elseif(CMAKE_HOST_WIN32)
@@ -138,7 +141,7 @@ endif()
 add_library(gcompris_core STATIC ${gcompris_SRCS})
 target_link_libraries(gcompris_core ${used_qt_modules})
 
-target_link_libraries(${GCOMPRIS_EXECUTABLE_NAME} gcompris_core ${used_qt_modules})
+target_link_libraries(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE gcompris_core ${used_qt_modules})
 
 if (USE_16KB_PAGESIZE)
   target_link_options(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
@@ -185,6 +188,17 @@ endif()
 if(ANDROID)
   set_property(TARGET ${GCOMPRIS_EXECUTABLE_NAME} PROPERTY SUFFIX "_${CMAKE_ANDROID_ARCH_ABI}.so")
 endif()
+
+if(EMSCRIPTEN)
+  target_link_libraries(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE embind)
+  add_custom_command(TARGET ${GCOMPRIS_EXECUTABLE_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${Qt6_DIR}/../../../plugins/platforms/qtloader.js"
+      "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/qtloader.js"
+    COMMENT "Copy qtloader.js to runtime output dir"
+  )
+endif()
+
 # Installation
 # ============
 

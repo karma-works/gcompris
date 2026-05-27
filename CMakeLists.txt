@@ -475,6 +475,11 @@ if(EMSCRIPTEN AND GCOMPRIS_WASM_PWA)
   target_link_options(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
     "SHELL:-s INITIAL_MEMORY=256MB"
+    "SHELL:-s STACK_SIZE=5MB"
+    "SHELL:-s MODULARIZE=1"
+    "SHELL:-s EXPORT_NAME=createGComprisApp"
+    "SHELL:-s ENVIRONMENT=web"
+    "SHELL:-s EXPORTED_RUNTIME_METHODS=UTF16ToString,stringToUTF16,JSEvents,specialHTMLTargets,FS,callMain"
     "SHELL:--preload-file ${CMAKE_BINARY_DIR}/${_data_dest_dir}@/${_data_dest_dir}"
   )
 

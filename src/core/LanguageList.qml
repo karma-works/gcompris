@@ -8,7 +8,7 @@
  *   SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import QtQuick
+import QtQml
 
 /**
  * Container object with a list of all available translations.

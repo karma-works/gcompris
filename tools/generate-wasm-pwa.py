@@ -65,6 +65,8 @@ def all_files(root: Path) -> list[str]:
 
 def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
     js_name = f"{app_name}.js"
+    # EXPORT_NAME used in the CMake MODULARIZE=1 link flags must match here.
+    entry_fn = "createGComprisApp"
     html = f"""<!doctype html>
 <html lang="de">
 <head>
@@ -76,18 +78,8 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
   <link rel="icon" href="logo.png">
   <title>GCompris</title>
   <style>
-    html, body, #screen {{
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background: #102d42;
-    }}
-    #screen {{
-      position: fixed;
-      inset: 0;
-      touch-action: none;
-    }}
+    html, body {{ padding: 0; margin: 0; overflow: hidden; height: 100%; background: #102d42; }}
+    #qtscreen {{ width: 100%; height: 100%; }}
     #status {{
       position: fixed;
       inset: 0;
@@ -95,32 +87,51 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
       place-items: center;
       color: white;
       font: 600 18px system-ui, sans-serif;
-      pointer-events: none;
+      background: #102d42;
     }}
-    body.ready #status {{
-      display: none;
-    }}
+    body.ready #status {{ display: none; }}
   </style>
 </head>
 <body>
-  <div id="screen"></div>
-  <div id="status">GCompris wird geladen...</div>
-  <script src="qtloader.js"></script>
+  <figure id="status">
+    <center style="margin-top:1.5em; line-height:150%">
+      <strong>GCompris</strong><br>
+      <div id="loadmsg">GCompris wird geladen...</div>
+    </center>
+  </figure>
+  <div id="qtscreen"></div>
   <script src="{js_name}"></script>
+  <script src="qtloader.js"></script>
   <script>
-    if ("serviceWorker" in navigator) {{
-      window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js"));
-    }}
+    async function init() {{
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("service-worker.js");
 
-    const screen = document.getElementById("screen");
-    qtLoad({{
-      arguments: ["--locale", "{default_locale}", "--fullscreen"],
-      qt: {{
-        containerElements: [screen],
-        onLoaded: () => document.body.classList.add("ready"),
-        onExit: () => document.body.classList.remove("ready")
+      const qtscreen = document.getElementById("qtscreen");
+      const status   = document.getElementById("status");
+      const loadmsg  = document.getElementById("loadmsg");
+
+      try {{
+        const instance = await qtLoad({{
+          arguments: ["--locale", "{default_locale}"],
+          qt: {{
+            entryFunction: window.{entry_fn},
+            containerElements: [qtscreen],
+            onLoaded: () => {{ document.body.classList.add("ready"); }},
+            onExit: (e) => {{
+              document.body.classList.remove("ready");
+              loadmsg.textContent = e.text ?? ("Exit code " + e.code);
+              status.style.display = "grid";
+              console.error("GCompris exited", e);
+            }}
+          }}
+        }});
+      }} catch (e) {{
+        loadmsg.textContent = "Load error: " + e.message;
+        console.error(e);
       }}
-    }});
+    }}
+    window.addEventListener("load", init);
   </script>
 </body>
 </html>
@@ -162,11 +173,16 @@ def write_manifest(output_dir: Path) -> None:
 
 
 def write_service_worker(output_dir: Path, version: str) -> None:
-    files = all_files(output_dir)
-    cache_seed = "\n".join(f"{name}:{file_hash(output_dir / name)}" for name in files)
+    all_file_list = all_files(output_dir)
+    # Exclude large binary blobs from the SW precache — the browser's HTTP cache
+    # handles them. Trying to cache a 100+ MB .data file in Cache Storage causes
+    # an OOM/quota failure that breaks the entire service worker install.
+    BYPASS_EXTENSIONS = {".data", ".wasm"}
+    precache_files = [f for f in all_file_list if not any(f.endswith(ext) for ext in BYPASS_EXTENSIONS)]
+    cache_seed = "\n".join(f"{name}:{file_hash(output_dir / name)}" for name in all_file_list)
     cache_name = f"gcompris-{version}-{hashlib.sha256(cache_seed.encode()).hexdigest()[:12]}"
     worker = f"""const CACHE_NAME = "{cache_name}";
-const PRECACHE_URLS = {json.dumps(files, indent=2)};
+const PRECACHE_URLS = {json.dumps(precache_files, indent=2)};
 
 self.addEventListener("install", event => {{
   event.waitUntil(
@@ -188,6 +204,11 @@ self.addEventListener("activate", event => {{
 
 self.addEventListener("fetch", event => {{
   if (event.request.method !== "GET") {{
+    return;
+  }}
+  // Let large binary assets (.data, .wasm) pass through to the browser HTTP cache.
+  const url = new URL(event.request.url);
+  if (url.pathname.endsWith(".data") || url.pathname.endsWith(".wasm")) {{
     return;
   }}
   event.respondWith(
