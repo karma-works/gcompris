@@ -227,24 +227,73 @@ Item {
         property bool initialized: false
     }
 
-    WorkerScript {
+    // WorkerScript is unavailable in Qt WASM singlethread builds (no thread
+    // support). The layout processing is simple array work — safe to run
+    // synchronously on all platforms without any noticeable UI impact.
+    QtObject {
         id: keyboardWorker
 
-        source: "virtualkeyboard_worker.js"
-        onMessage: (messageObject) => {
-            // worker finished
+        function sendMessage(msg) {
+            // Synchronous equivalent of virtualkeyboard_worker.js
+            msg.newModel = [];
+            if (!Array.isArray(msg.a) || msg.a.length < 1) {
+                msg.error = "VirtualKeyboard: Invalid layout, array of length > 0";
+                _handleMessage(msg);
+                return;
+            }
+            if (msg.shiftKey) {
+                msg.a.push([{
+                    label: msg.shiftUpSymbol + " Shift",
+                    shiftLabel: msg.shiftDownSymbol + " Shift",
+                    specialKeyValue: Qt.Key_Shift
+                }]);
+            }
+            var seenLabels = [];
+            for (var i = 0; i < msg.a.length; i++) {
+                if (!Array.isArray(msg.a[i])) {
+                    msg.error = "VirtualKeyboard: Invalid layout, expecting array of arrays of keys";
+                    _handleMessage(msg);
+                    return;
+                }
+                for (var j = 0; j < msg.a[i].length; j++) {
+                    if (undefined === msg.a[i][j].label) {
+                        msg.error = "VirtualKeyboard: Invalid layout, invalid key object";
+                        _handleMessage(msg);
+                        return;
+                    }
+                    if (undefined === msg.a[i][j].specialKeyValue)
+                        msg.a[i][j].specialKeyValue = 0;
+                    var label = msg.a[i][j].label;
+                    if (msg.shiftKey && label === label.toLocaleUpperCase())
+                        label = label.toLocaleLowerCase();
+                    if (seenLabels.indexOf(label) !== -1) {
+                        msg.a[i].splice(j, 1);
+                        j--;
+                        continue;
+                    }
+                    msg.a[i][j].label = label;
+                    seenLabels.push(label);
+                    if (msg.shiftKey && undefined === msg.a[i][j].shiftLabel)
+                        msg.a[i][j].shiftLabel = msg.a[i][j].label.toLocaleUpperCase();
+                }
+                msg.newModel.push({ rowNum: i, offset: 0, keys: msg.a[i] });
+            }
+            msg.numRows = msg.a.length;
+            msg.initialized = (msg.numRows > 0);
+            msg.error = "";
+            _handleMessage(msg);
+        }
 
-            // Append objects from messageObject.newModel Array to rowListModel ListModel (Workaround for https://bugreports.qt.io/browse/QTBUG-140781)
+        function _handleMessage(messageObject) {
+            // Append objects from messageObject.newModel Array to rowListModel ListModel
             rowListModel.clear();
-            messageObject.newModel.forEach((listObject) => {
+            messageObject.newModel.forEach(function(listObject) {
                 rowListModel.append(listObject);
             });
-
             activity.loading.stop();
             if (messageObject.error !== "") {
-                error(messageObject.error);
+                keyboard.error(messageObject.error);
             } else {
-                // update all changed values (except the model):
                 priv.numRows = messageObject.numRows;
                 priv.initialized = messageObject.initialized;
             }

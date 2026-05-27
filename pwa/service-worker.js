@@ -1,4 +1,4 @@
-const CACHE_NAME = "gcompris-26.1-a056d775b271";
+const CACHE_NAME = "gcompris-26.1-f9231778e01d";
 const PRECACHE_URLS = [
   "gcompris-qt.html",
   "gcompris-qt.js",
