@@ -369,7 +369,8 @@ Window {
                             "", null,
                             "", null,
                             function() {
-                                pageView.currentItem.focus = true;
+                                if (pageView.currentItem)
+                                    pageView.currentItem.focus = true;
                                 if(ApplicationInfo.isDownloadAllowed) {
                                     initialAssetsDownload();
                                 }

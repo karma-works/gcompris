@@ -98,7 +98,17 @@ endif()
 
 set(QT_MAJOR Qt6)
 
-set(QT_COMPONENTS Qml Quick Gui Multimedia Core Svg Network LinguistTools Sensors QuickControls2 QuickTemplates2 QmlWorkerScript)
+# Qt Sensors is not ported to WebAssembly; keep it optional for EMSCRIPTEN so
+# the build can proceed without it and fall back to no-op tilt/rotation support.
+# Qt Sensors and QmlWorkerScript are not ported to WebAssembly singlethread;
+# keep them optional for EMSCRIPTEN builds.
+if(EMSCRIPTEN)
+  set(QT_COMPONENTS Qml Quick Gui Multimedia Core Svg Network LinguistTools QuickControls2 QuickTemplates2)
+  set(QT_OPTIONAL_COMPONENTS Sensors QmlWorkerScript)
+else()
+  set(QT_COMPONENTS Qml Quick Gui Multimedia Core Svg Network LinguistTools Sensors QuickControls2 QuickTemplates2 QmlWorkerScript)
+  set(QT_OPTIONAL_COMPONENTS "")
+endif()
 
 find_package(QT NAMES Qt6)
 find_package(${QT_MAJOR} ${QT_REQUIRED_VERSION} COMPONENTS
@@ -108,6 +118,10 @@ set_package_properties(${QT_MAJOR} PROPERTIES TYPE REQUIRED)
 foreach(COMPONENT ${QT_COMPONENTS})
   set_package_properties(${QT_MAJOR}${COMPONENT} PROPERTIES TYPE REQUIRED)
 endforeach()
+
+if(QT_OPTIONAL_COMPONENTS)
+  find_package(${QT_MAJOR} ${QT_REQUIRED_VERSION} OPTIONAL_COMPONENTS ${QT_OPTIONAL_COMPONENTS})
+endif()
 
 set(QT_VERSION "${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH}")
 if(QT_VERSION VERSION_LESS "6.9.0")
@@ -156,8 +170,10 @@ if(SHIP_SYSTEM_ICU)
 endif()
 
 find_package(OpenSSL)
-# OpenSSL will be compiled as external_project for android
-if(NOT ANDROID)
+# OpenSSL will be compiled as external_project for android. Qt for
+# WebAssembly provides the browser TLS stack, so a native OpenSSL package is
+# not expected there.
+if(NOT ANDROID AND NOT EMSCRIPTEN)
   set_package_properties(OpenSSL PROPERTIES TYPE REQUIRED)
 endif()
 
@@ -180,9 +196,20 @@ if(ECM_FOUND)
     endif()
 endif()
 
-option(PACKAGE_GCOMPRIS "Package GCompris (default)" ON)
+if(EMSCRIPTEN)
+  set(_gcompris_default_build_server OFF)
+  set(_gcompris_default_package OFF)
+else()
+  set(_gcompris_default_build_server ON)
+  set(_gcompris_default_package ON)
+endif()
 
-option(BUILD_SERVER "Build the server along the application" ON)
+option(PACKAGE_GCOMPRIS "Package GCompris (default)" ${_gcompris_default_package})
+option(GCOMPRIS_WASM_PWA "Generate a Progressive Web App bundle for WebAssembly builds" ${EMSCRIPTEN})
+set(GCOMPRIS_WASM_DEFAULT_LOCALE "de_DE" CACHE STRING "Default locale passed to the WebAssembly PWA")
+set(GCOMPRIS_WASM_PWA_DIST_DIR "${CMAKE_BINARY_DIR}/pwa" CACHE PATH "Output directory for the generated WebAssembly PWA")
+
+option(BUILD_SERVER "Build the server along the application" ${_gcompris_default_build_server})
 option(PACKAGE_SERVER "Package the server" OFF)
 
 if(BUILD_SERVER)
@@ -209,7 +236,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(WITH_RCC "Use rcc for activities instead of qml plugins" ON)
 
-option(WITH_DOWNLOAD "Internal download" ON)
+if(EMSCRIPTEN)
+  set(_gcompris_default_with_download OFF)
+else()
+  set(_gcompris_default_with_download ON)
+endif()
+option(WITH_DOWNLOAD "Internal download" ${_gcompris_default_with_download})
 # @FIXME These permissions should be removed if download is disable
 #        but it makes the application crash on exit (tested on Android 6)
 set(ANDROID_INTERNET_PERMISSION "<uses-permission android:name=\"android.permission.INTERNET\" />")
@@ -223,7 +255,9 @@ set(ANDROID_WIFI_BROADCAST_PERMISSION "<uses-permission android:name=\"android.p
 set(GRAPHICAL_RENDERER "auto" CACHE STRING "Policy for choosing the renderer backend [opengl|software|auto]")
 
 # Set output directory
-if(CMAKE_HOST_APPLE)
+# EMSCRIPTEN cross-compiles from any host, so check it before CMAKE_HOST_APPLE
+# to avoid picking up the macOS bundle layout when building WASM on a Mac.
+if(CMAKE_HOST_APPLE AND NOT EMSCRIPTEN)
   set(_bundle_bin gcompris-qt.app/Contents/MacOS)
   set(_data_dest_dir ${CMAKE_INSTALL_BINDIR}/${_bundle_bin}/../Resources)
 else()
@@ -236,13 +270,8 @@ if(ANDROID)
   set(GCOMPRIS_RCC_DIR ${CMAKE_BINARY_DIR}/android-build/assets/${_data_dest_dir}/rcc CACHE INTERNAL "" FORCE)
   set(ANDROID_PACKAGE "net.gcompris.full")
   add_subdirectory(android)
-elseif(CMAKE_HOST_APPLE)
-  # MacOSX build
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-  set(GCOMPRIS_TRANSLATIONS_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/translations CACHE INTERNAL "" FORCE)
-  set(GCOMPRIS_RCC_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/rcc CACHE INTERNAL "" FORCE)
 else()
-  # Desktop build
+  # Desktop, WebAssembly, and macOS builds all use the same output layout
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
   set(GCOMPRIS_TRANSLATIONS_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/translations CACHE INTERNAL "" FORCE)
   set(GCOMPRIS_RCC_DIR ${CMAKE_BINARY_DIR}/${_data_dest_dir}/rcc CACHE INTERNAL "" FORCE)
@@ -272,8 +301,8 @@ if(NOT SKIP_TRANSLATIONS)
   endif()
 endif()
 
-if(CMAKE_HOST_APPLE)
-  install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${_bundle_bin})
+if(CMAKE_HOST_APPLE AND NOT EMSCRIPTEN)
+  install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${_bundle_bin}/../Resources)
 elseif(ANDROID)
   install(DIRECTORY ${GCOMPRIS_TRANSLATIONS_DIR} DESTINATION ${CMAKE_INSTALL_DATADIR})
 else()
@@ -297,7 +326,9 @@ endif()
 
 option(WITH_KIOSK_MODE "Set the kiosk mode by default" OFF)
 
-if(WIN32)
+if(EMSCRIPTEN)
+  set(COMPRESSED_AUDIO "ogg" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
+elseif(WIN32)
   set(COMPRESSED_AUDIO "mp3" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
 elseif(APPLE)
   set(COMPRESSED_AUDIO "aac" CACHE STRING "Compressed Audio format [ogg|aac|mp3]")
@@ -346,7 +377,12 @@ else()
 endif()
 
 # predownload assets (voices and images) and install them in the rcc folder
-set(DOWNLOAD_ASSETS "" CACHE STRING "Download and packages images and voices. use a list like: words,en,fr,pt_BR,music to retrieve multiple files")
+if(EMSCRIPTEN)
+  set(_gcompris_default_download_assets "words,music,de")
+else()
+  set(_gcompris_default_download_assets "")
+endif()
+set(DOWNLOAD_ASSETS "${_gcompris_default_download_assets}" CACHE STRING "Download and packages images and voices. use a list like: words,en,fr,pt_BR,music to retrieve multiple files")
 add_custom_command(
     OUTPUT predownloadAssets
     COMMAND python3 tools/download-assets.py ${DOWNLOAD_ASSETS} ${COMPRESSED_AUDIO} ${GCOMPRIS_ASSETS_DIR}
@@ -427,6 +463,40 @@ if(WITH_RCC)
   add_dependencies(binaries rcc_menu rcc_core)
 endif()
 
+if(EMSCRIPTEN AND GCOMPRIS_WASM_PWA)
+  add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} rcc_activities all_activities getAssets)
+  if(WITH_RCC)
+    add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} rcc_menu rcc_core)
+  endif()
+  if(TARGET BuildTranslationsgcompris_qt)
+    add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} BuildTranslationsgcompris_qt)
+  endif()
+
+  target_link_options(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE
+    "SHELL:-s ALLOW_MEMORY_GROWTH=1"
+    "SHELL:-s INITIAL_MEMORY=256MB"
+    "SHELL:-s STACK_SIZE=5MB"
+    "SHELL:-s MODULARIZE=1"
+    "SHELL:-s EXPORT_NAME=createGComprisApp"
+    "SHELL:-s ENVIRONMENT=web"
+    "SHELL:-s EXPORTED_RUNTIME_METHODS=UTF16ToString,stringToUTF16,JSEvents,specialHTMLTargets,FS,callMain"
+    "SHELL:--preload-file ${CMAKE_BINARY_DIR}/${_data_dest_dir}@/${_data_dest_dir}"
+  )
+
+  add_custom_target(wasm_pwa_dist
+    COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/generate-wasm-pwa.py
+      --runtime-dir ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+      --data-dir ${CMAKE_BINARY_DIR}/${_data_dest_dir}
+      --output-dir ${GCOMPRIS_WASM_PWA_DIST_DIR}
+      --app-name ${GCOMPRIS_EXECUTABLE_NAME}
+      --version ${GCOMPRIS_VERSION}
+      --default-locale ${GCOMPRIS_WASM_DEFAULT_LOCALE}
+    DEPENDS binaries
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generate installable offline PWA bundle in ${GCOMPRIS_WASM_PWA_DIST_DIR}"
+  )
+endif()
+
 # Add a target to automatise the filling of the files requiring info for the releases: appdata/publiccode release date, fastlane changelog
 string(TIMESTAMP currentDay "%Y-%m-%d")
 add_custom_command(
@@ -440,4 +510,3 @@ add_custom_target(updateReleaseDate
   DEPENDS doUpdateReleaseDate
   COMMENT "Run the scripts to bump the version if not already done. It assumes the changelog is already created for this version."
   )
-

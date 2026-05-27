@@ -17,7 +17,9 @@
 #include "ApplicationSettings.h"
 
 #include <QObject>
+#ifndef Q_OS_WASM
 #include <QSslSocket>
+#endif
 #include <QTranslator>
 #include <QtQml/qqmlregistration.h>
 
@@ -302,7 +304,11 @@ public:
     static QString QTVersion() { return qVersion(); }
     // Only used for the switch to QtGraphs, can be removed after Qt 6.9 minimum
     static int QTMinorVersion() { return QVersionNumber::fromString(qVersion()).minorVersion(); }
+#ifndef Q_OS_WASM
     static QString OpenSSLVersion() { return QSslSocket::sslLibraryVersionString(); }
+#else
+    static QString OpenSSLVersion() { return QStringLiteral("browser TLS"); }
+#endif
     static QString CompressedAudio() { return COMPRESSED_AUDIO; }
     static bool isDownloadAllowed() { return QString(DOWNLOAD_ALLOWED) == "ON"; }
     bool useSoftwareRenderer() const { return m_useSoftwareRenderer; }

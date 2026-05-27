@@ -91,7 +91,7 @@ if(BUILD_STANDALONE)
     set(_app gcompris-qt.app)
     set(_qtconf_destdir ${_app}/Contents/Resources)
     set(_qt_plugins_destdir ${_app}/Contents/plugins)
-    set(_qt_plugins2_destdir ${_app}/Contents/Plugins)
+    set(_qt_plugins2_destdir ${_qt_plugins_destdir})
     set(_qt_qml_destdir ${_app}/Contents/qml)
     set(GCOMPRIS_BUNDLE "\${CMAKE_INSTALL_PREFIX}/${_app}")
     set_target_properties(gcompris-qt PROPERTIES
@@ -102,7 +102,9 @@ if(BUILD_STANDALONE)
       MACOSX_BUNDLE_BUNDLE_NAME "gcompris-qt"
       MACOSX_BUNDLE_SHORT_VERSION_STRING "${GCOMPRIS_VERSION}"
       MACOSX_BUNDLE_BUNDLE_VERSION "${GCOMPRIS_VERSION}"
-      MACOSX_BUNDLE_COPYRIGHT "AGPL-3.0 License, SPDX-FileCopyrightText: 2000-2025 Timothee Giet and Others.")
+      MACOSX_BUNDLE_COPYRIGHT "AGPL-3.0 License, SPDX-FileCopyrightText: 2000-2025 Timothee Giet and Others."
+      INSTALL_RPATH "@executable_path/../Frameworks"
+      MACOSX_RPATH ON)
     set_source_files_properties(${GCOMPRIS_RESOURCES}/${gcompris_icon} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   else()
     set(_qtconf_destdir bin)
@@ -178,6 +180,9 @@ if(BUILD_STANDALONE AND NOT ANDROID)
   get_filename_component(QT_LIBS_DIRECTORY ${QtCore_location} DIRECTORY)
 
   configure_file(${CMAKE_SOURCE_DIR}/cmake/FixBundle.cmake.in FixBundle.cmake)
+  if(APPLE)
+    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/FixBundle.cmake "\ninclude(${CMAKE_SOURCE_DIR}/cmake/MacPostFixup.cmake)\n")
+  endif()
   install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/FixBundle.cmake)
 
   # install a startup script for linux bundle

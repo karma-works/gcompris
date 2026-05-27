@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0c6fb8">
+  <meta name="description" content="GCompris educational activities">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="logo.png">
+  <title>GCompris</title>
+  <style>
+    html, body { padding: 0; margin: 0; overflow: hidden; height: 100%; background: #102d42; }
+    #qtscreen { width: 100%; height: 100%; }
+    #status {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: white;
+      font: 600 18px system-ui, sans-serif;
+      background: #102d42;
+    }
+    body.ready #status { display: none; }
+  </style>
+</head>
+<body>
+  <figure id="status">
+    <center style="margin-top:1.5em; line-height:150%">
+      <strong>GCompris</strong><br>
+      <div id="loadmsg">GCompris wird geladen...</div>
+    </center>
+  </figure>
+  <div id="qtscreen"></div>
+  <script src="gcompris-qt.js"></script>
+  <script src="qtloader.js"></script>
+  <script>
+    async function init() {
+      if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("service-worker.js");
+
+      const qtscreen = document.getElementById("qtscreen");
+      const status   = document.getElementById("status");
+      const loadmsg  = document.getElementById("loadmsg");
+
+      try {
+        const instance = await qtLoad({
+          arguments: ["--locale", "de_DE"],
+          qt: {
+            entryFunction: window.createGComprisApp,
+            containerElements: [qtscreen],
+            onLoaded: () => { document.body.classList.add("ready"); },
+            onExit: (e) => {
+              document.body.classList.remove("ready");
+              loadmsg.textContent = e.text ?? ("Exit code " + e.code);
+              status.style.display = "grid";
+              console.error("GCompris exited", e);
+            }
+          }
+        });
+      } catch (e) {
+        loadmsg.textContent = "Load error: " + e.message;
+        console.error(e);
+      }
+    }
+    window.addEventListener("load", init);
+  </script>
+</body>
+</html>
