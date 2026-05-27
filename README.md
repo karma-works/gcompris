@@ -3,7 +3,7 @@
 > Original repository: https://invent.kde.org/education/gcompris
 >
 > **[▶ Try it live in your browser (WebAssembly PWA)](https://karma-works.github.io/gcompris/)**
-
+> (be patient, the app needs to download about 200MB)
 # [GCompris](https://gcompris.net)
 
 <img src="src/core/resource/gcompris-logo-full.svg"  width="320" height="114" alt="GCompris logo">
