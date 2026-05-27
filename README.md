@@ -1,6 +1,8 @@
-> **This is a fork of the official [GCompris](https://gcompris.net) for macOS.** The official project only provides outdated binaries for MacOS and [does not accept AI-generated code contributions](https://invent.kde.org/education/gcompris/-/blob/master/HACKING). This fork is based on the latest upstream version and works on modern macOS. **Any contributions are welcome.**
+> **This is a fork of the official [GCompris](https://gcompris.net) for macOS and the web.** The official project only provides outdated binaries for MacOS and [does not accept AI-generated code contributions](https://invent.kde.org/education/gcompris/-/blob/master/HACKING). This fork is based on the latest upstream version and works on modern macOS. **Any contributions are welcome.**
 >
 > Original repository: https://invent.kde.org/education/gcompris
+>
+> **[▶ Try it live in your browser (WebAssembly PWA)](https://karma-works.github.io/gcompris/)**
 
 # [GCompris](https://gcompris.net)
 
