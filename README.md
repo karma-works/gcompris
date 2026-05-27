@@ -4,6 +4,10 @@
 >
 > **[▶ Try it live in your browser (WebAssembly PWA)](https://karma-works.github.io/gcompris/)**
 > (be patient, the app needs to download about 200MB)
+
+
+<img src="docs/gcompris-web-screenshot.png" alt="GCompris Screenshot">
+
 # [GCompris](https://gcompris.net)
 
 <img src="src/core/resource/gcompris-logo-full.svg"  width="320" height="114" alt="GCompris logo">
