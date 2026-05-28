@@ -89,6 +89,17 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
       font: 600 18px system-ui, sans-serif;
       background: #102d42;
     }}
+    #start {{
+      margin-top: 1.25rem;
+      padding: 0.7rem 1.2rem;
+      border: 0;
+      border-radius: 0.4rem;
+      color: white;
+      background: #0c6fb8;
+      font: 600 16px system-ui, sans-serif;
+      cursor: pointer;
+    }}
+    body.loading #start {{ display: none; }}
     body.ready #status {{ display: none; }}
   </style>
 </head>
@@ -96,20 +107,29 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
   <figure id="status">
     <center style="margin-top:1.5em; line-height:150%">
       <strong>GCompris</strong><br>
-      <div id="loadmsg">GCompris wird geladen...</div>
+      <div id="loadmsg">Bereit zum Starten</div>
+      <button id="start" type="button">Start</button>
     </center>
   </figure>
   <div id="qtscreen"></div>
   <script src="{js_name}"></script>
   <script src="qtloader.js"></script>
   <script>
+    let started = false;
+
     async function init() {{
+      if (started)
+        return;
+      started = true;
+      document.body.classList.add("loading");
+
       if ("serviceWorker" in navigator)
         navigator.serviceWorker.register("service-worker.js");
 
       const qtscreen = document.getElementById("qtscreen");
       const status   = document.getElementById("status");
       const loadmsg  = document.getElementById("loadmsg");
+      loadmsg.textContent = "GCompris wird geladen...";
 
       try {{
         const instance = await qtLoad({{
@@ -119,6 +139,7 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
             containerElements: [qtscreen],
             onLoaded: () => {{ document.body.classList.add("ready"); }},
             onExit: (e) => {{
+              document.body.classList.remove("loading");
               document.body.classList.remove("ready");
               loadmsg.textContent = e.text ?? ("Exit code " + e.code);
               status.style.display = "grid";
@@ -127,32 +148,16 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
           }}
         }});
       }} catch (e) {{
+        document.body.classList.remove("loading");
         loadmsg.textContent = "Load error: " + e.message;
         console.error(e);
       }}
     }}
-    window.addEventListener("load", init);
-
-    // Qt's QWasmMediaPlayer uses <audio>.play() which browsers block until
-    // a user gesture occurs. Intercept every play() call: if it's rejected
-    // with NotAllowedError, queue the element and retry on first interaction.
-    (function () {{
-      const _play = HTMLMediaElement.prototype.play;
-      const pending = new Set();
-
-      HTMLMediaElement.prototype.play = function () {{
-        const p = _play.call(this);
-        if (p) p.catch(e => {{ if (e.name === "NotAllowedError") pending.add(this); }});
-        return p;
-      }};
-
-      function unlock() {{
-        pending.forEach(el => _play.call(el).catch(() => {{}}));
-        pending.clear();
-        ["click","touchstart","keydown"].forEach(t => document.removeEventListener(t, unlock));
-      }}
-      ["click","touchstart","keydown"].forEach(t => document.addEventListener(t, unlock));
-    }})();
+    window.addEventListener("load", () => {{
+      const start = document.getElementById("start");
+      start.addEventListener("click", init, {{ once: true }});
+      window.addEventListener("keydown", init, {{ once: true }});
+    }});
   </script>
 </body>
 </html>

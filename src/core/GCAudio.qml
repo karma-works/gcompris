@@ -241,7 +241,10 @@ Item {
         // Affects at least Qt 6.6.2, 6.6.3, 6.7.1, 6.7.2
         // Test next versions with letter P (U0070.ogg) in en_US to see when it's fixed
         onPositionChanged: {
-            if(audio.position === audio.duration)
+            if(Qt.platform.os !== "wasm"
+               && audio.playbackState === MediaPlayer.PlayingState
+               && audio.duration > 0
+               && audio.position === audio.duration)
                 audio.stop()
         }
 

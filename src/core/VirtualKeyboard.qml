@@ -227,90 +227,87 @@ Item {
         property bool initialized: false
     }
 
-    // WorkerScript is unavailable in Qt WASM singlethread builds (no thread
-    // support). The layout processing is simple array work — safe to run
-    // synchronously on all platforms without any noticeable UI impact.
-    QtObject {
-        id: keyboardWorker
-
-        function sendMessage(msg) {
-            // Synchronous equivalent of virtualkeyboard_worker.js
-            msg.newModel = [];
-            if (!Array.isArray(msg.a) || msg.a.length < 1) {
-                msg.error = "VirtualKeyboard: Invalid layout, array of length > 0";
-                _handleMessage(msg);
-                return;
-            }
-            if (msg.shiftKey) {
-                msg.a.push([{
-                    label: msg.shiftUpSymbol + " Shift",
-                    shiftLabel: msg.shiftDownSymbol + " Shift",
-                    specialKeyValue: Qt.Key_Shift
-                }]);
-            }
-            var seenLabels = [];
-            for (var i = 0; i < msg.a.length; i++) {
-                if (!Array.isArray(msg.a[i])) {
-                    msg.error = "VirtualKeyboard: Invalid layout, expecting array of arrays of keys";
-                    _handleMessage(msg);
-                    return;
-                }
-                for (var j = 0; j < msg.a[i].length; j++) {
-                    if (undefined === msg.a[i][j].label) {
-                        msg.error = "VirtualKeyboard: Invalid layout, invalid key object";
-                        _handleMessage(msg);
-                        return;
-                    }
-                    if (undefined === msg.a[i][j].specialKeyValue)
-                        msg.a[i][j].specialKeyValue = 0;
-                    var label = msg.a[i][j].label;
-                    if (msg.shiftKey && label === label.toLocaleUpperCase())
-                        label = label.toLocaleLowerCase();
-                    if (seenLabels.indexOf(label) !== -1) {
-                        msg.a[i].splice(j, 1);
-                        j--;
-                        continue;
-                    }
-                    msg.a[i][j].label = label;
-                    seenLabels.push(label);
-                    if (msg.shiftKey && undefined === msg.a[i][j].shiftLabel)
-                        msg.a[i][j].shiftLabel = msg.a[i][j].label.toLocaleUpperCase();
-                }
-                msg.newModel.push({ rowNum: i, offset: 0, keys: msg.a[i] });
-            }
-            msg.numRows = msg.a.length;
-            msg.initialized = (msg.numRows > 0);
-            msg.error = "";
-            _handleMessage(msg);
-        }
-
-        function _handleMessage(messageObject) {
-            // Append objects from messageObject.newModel Array to rowListModel ListModel
-            rowListModel.clear();
-            messageObject.newModel.forEach(function(listObject) {
-                rowListModel.append(listObject);
-            });
-            activity.loading.stop();
-            if (messageObject.error !== "") {
-                keyboard.error(messageObject.error);
-            } else {
-                priv.numRows = messageObject.numRows;
-                priv.initialized = messageObject.initialized;
-            }
-        }
-    }
-
     function populateKeyboard(a) {
         modifiers = Qt.NoModifier
         activity.loading.start();
-        // populate asynchronously in a worker thread:
-        keyboardWorker.sendMessage({
-                                       shiftKey: keyboard.shiftKey,
-                                       shiftUpSymbol: keyboard.shiftUpSymbol,
-                                       shiftDownSymbol: keyboard.shiftDownSymbol,
-                                       a: a,
-                                       newModel: []
-                                   });
+
+        var result = createKeyboardModel(a);
+        rowListModel.clear();
+        result.newModel.forEach((listObject) => {
+            rowListModel.append(listObject);
+        });
+
+        activity.loading.stop();
+        if(result.error !== "") {
+            error(result.error);
+        } else {
+            priv.numRows = result.numRows;
+            priv.initialized = result.initialized;
+        }
+    }
+
+    function createKeyboardModel(a) {
+        var result = {
+            error: "",
+            initialized: false,
+            newModel: [],
+            numRows: 0
+        };
+        if(!Array.isArray(a) || a.length < 1) {
+            result.error = "VirtualKeyboard: Invalid layout, array of length > 0";
+            return result;
+        }
+
+        var layout = a.map((row) => row.map((key) => Object.assign({}, key)));
+        if(keyboard.shiftKey) {
+            layout.push([ {
+                label: keyboard.shiftUpSymbol + " Shift",
+                shiftLabel: keyboard.shiftDownSymbol + " Shift",
+                specialKeyValue: Qt.Key_Shift
+            } ]);
+        }
+
+        var seenLabels = [];
+        for(var i = 0; i < layout.length; i++) {
+            if(!Array.isArray(layout[i])) {
+                result.error = "VirtualKeyboard: Invalid layout, expecting array of arrays of keys";
+                return result;
+            }
+            for(var j = 0; j < layout[i].length; j++) {
+                if(undefined === layout[i][j].label) {
+                    result.error = "VirtualKeyboard: Invalid layout, invalid key object";
+                    return result;
+                }
+                if(undefined === layout[i][j].specialKeyValue) {
+                    layout[i][j].specialKeyValue = 0;
+                }
+                var label = layout[i][j].label;
+                if(keyboard.shiftKey && label == label.toLocaleUpperCase()) {
+                    label = label.toLocaleLowerCase();
+                }
+                if(seenLabels.indexOf(label) != -1) {
+                    layout[i].splice(j, 1);
+                    j--;
+                    continue;
+                }
+                layout[i][j].label = label;
+                seenLabels.push(label);
+                if(keyboard.shiftKey && undefined === layout[i][j].shiftLabel) {
+                    layout[i][j].shiftLabel = layout[i][j].label.toLocaleUpperCase();
+                }
+            }
+        }
+
+        for(i = 0; i < layout.length; i++) {
+            result.newModel.push({
+                rowNum: i,
+                offset: 0,
+                keys: layout[i]
+            });
+        }
+        result.numRows = layout.length;
+        result.initialized = result.numRows > 0;
+        return result;
     }
 
     function handleVirtualKeyPress(virtualKey) {
