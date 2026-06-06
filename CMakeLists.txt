@@ -206,7 +206,7 @@ endif()
 
 option(PACKAGE_GCOMPRIS "Package GCompris (default)" ${_gcompris_default_package})
 option(GCOMPRIS_WASM_PWA "Generate a Progressive Web App bundle for WebAssembly builds" ${EMSCRIPTEN})
-set(GCOMPRIS_WASM_DEFAULT_LOCALE "de_DE" CACHE STRING "Default locale passed to the WebAssembly PWA")
+set(GCOMPRIS_WASM_DEFAULT_LOCALE "en_US" CACHE STRING "Default locale passed to the WebAssembly PWA")
 set(GCOMPRIS_WASM_PWA_DIST_DIR "${CMAKE_BINARY_DIR}/pwa" CACHE PATH "Output directory for the generated WebAssembly PWA")
 
 option(BUILD_SERVER "Build the server along the application" ${_gcompris_default_build_server})
@@ -379,7 +379,7 @@ endif()
 
 # predownload assets (voices and images) and install them in the rcc folder
 if(EMSCRIPTEN)
-  set(_gcompris_default_download_assets "words,music,de")
+  set(_gcompris_default_download_assets "words,music,en_US")
 else()
   set(_gcompris_default_download_assets "")
 endif()
@@ -481,6 +481,7 @@ if(EMSCRIPTEN AND GCOMPRIS_WASM_PWA)
     "SHELL:-s EXPORT_NAME=createGComprisApp"
     "SHELL:-s ENVIRONMENT=web"
     "SHELL:-s EXPORTED_RUNTIME_METHODS=UTF16ToString,stringToUTF16,JSEvents,specialHTMLTargets,FS,callMain"
+    "SHELL:-lidbfs.js"
     "SHELL:--preload-file ${CMAKE_BINARY_DIR}/${_data_dest_dir}@/${_data_dest_dir}"
   )
 

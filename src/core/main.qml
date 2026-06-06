@@ -195,9 +195,10 @@ Window {
 
         // check for words-webp.rcc:
         if(wordset != "" && DownloadManager.haveLocalResource(wordset)) {
-            // words-webp.rcc is there -> register old file first
-            // then try to update in the background
-            DownloadManager.updateResource(GCompris.WORDSET, {});
+            if(Qt.platform.os === "wasm")
+                DownloadManager.registerResource(wordset)
+            else
+                DownloadManager.updateResource(GCompris.WORDSET, {});
         } else {
             // words-webp.rcc has not been downloaded yet -> ask for download
             wordSetDownloaded = false;
@@ -214,8 +215,10 @@ Window {
         }
         // We have local music but it is not yet registered
         else if(music !== "") {
-            // We have music and automatic download is enabled. Download the music and register it
-            DownloadManager.updateResource(GCompris.BACKGROUND_MUSIC, {})
+            if(Qt.platform.os === "wasm")
+                DownloadManager.registerResource(music)
+            else
+                DownloadManager.updateResource(GCompris.BACKGROUND_MUSIC, {})
         }
         else if(ApplicationSettings.isBackgroundMusicEnabled && !DownloadManager.haveLocalResource(music)) {
             musicDownloaded = false;
@@ -223,14 +226,35 @@ Window {
     }
 
     function checkVoices() {
-        var voicesRcc = DownloadManager.getVoicesResourceForLocale(ApplicationSettings.locale)
-        if(voicesRcc == "" || !DownloadManager.haveLocalResource(voicesRcc))
-            voicesDownloaded = false;
-        else {
-            if(voicesRcc !== "") {
-                DownloadManager.updateResource(GCompris.VOICES, {"locale": ApplicationInfo.getVoicesLocale(ApplicationSettings.locale)});
-            }
+        updateOrDownloadVoices(ApplicationSettings.locale)
+    }
+
+    function registerEnglishVoiceFallback() {
+        var fallbackLocale = "en_US.UTF-8"
+        var fallbackVoicesRcc = DownloadManager.getVoicesResourceForLocale(fallbackLocale)
+        if(fallbackVoicesRcc !== "" && DownloadManager.haveLocalResource(fallbackVoicesRcc))
+            DownloadManager.registerResource(fallbackVoicesRcc)
+    }
+
+    function updateOrDownloadVoices(locale) {
+        var voicesLocale = ApplicationInfo.getVoicesLocale(locale)
+        var voicesRcc = DownloadManager.getVoicesResourceForLocale(locale)
+        if(voicesRcc !== "" && DownloadManager.haveLocalResource(voicesRcc)) {
+            if(Qt.platform.os === "wasm")
+                DownloadManager.registerResource(voicesRcc)
+            else
+                DownloadManager.updateResource(GCompris.VOICES, {"locale": voicesLocale})
+            return true
         }
+
+        voicesDownloaded = false
+        if(voicesLocale !== "en_US")
+            registerEnglishVoiceFallback()
+
+        if(ApplicationInfo.isDownloadAllowed && ApplicationSettings.isAutomaticDownloadsEnabled)
+            return DownloadManager.downloadResource(GCompris.VOICES, {"locale": voicesLocale})
+
+        return false
     }
 
     function initialAssetsDownload() {
@@ -378,15 +402,13 @@ Window {
                  );
             }
             else {
-                // Register voices-resources for current locale, updates/downloads only if
-                // not prohibited by the settings
-                DownloadManager.updateResource(GCompris.VOICES, {"locale": ApplicationInfo.getVoicesLocale(ApplicationSettings.locale)});
+                // Register voices-resources for current locale, or download them
+                // if automatic downloads are enabled and they are not local yet.
+                updateOrDownloadVoices(ApplicationSettings.locale);
 
                 checkWordset();
-                DownloadManager.updateResource(GCompris.WORDSET, {});
 
                 checkBackgroundMusic();
-                DownloadManager.updateResource(GCompris.BACKGROUND_MUSIC, {});
 
                 if(changelog.isNewerVersion(ApplicationSettings.lastGCVersionRan, ApplicationInfo.GCVersionCode)) {
                     lastGCVersionRanCopy = ApplicationSettings.lastGCVersionRan;

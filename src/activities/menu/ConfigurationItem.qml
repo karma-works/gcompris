@@ -587,16 +587,22 @@ Item {
 
         if (ApplicationSettings.locale !== dialogConfig.languages[languageBox.currentIndex].locale) {
             ApplicationSettings.locale = dialogConfig.languages[languageBox.currentIndex].locale
+            var voicesLocale = ApplicationInfo.getVoicesLocale(ApplicationSettings.locale)
             if(ApplicationInfo.isDownloadAllowed && !DownloadManager.isDataRegistered(
-                        "voices-" + ApplicationInfo.CompressedAudio + "/" +
-                        ApplicationInfo.getVoicesLocale(ApplicationSettings.locale)
-                        ))
-            {
-                // ask for downloading new voices
-                parentActivity.newVoicesSignal();
+                        "voices-" + ApplicationInfo.CompressedAudio + "/" + voicesLocale)) {
+                if(ApplicationSettings.isAutomaticDownloadsEnabled) {
+                    DownloadManager.downloadResource(GCompris.VOICES, {"locale": voicesLocale});
+                } else {
+                    // ask for downloading new voices
+                    parentActivity.newVoicesSignal();
+                }
             } else {
                 // check for updates or/and register new voices
-                DownloadManager.updateResource(GCompris.VOICES, {"locale": ApplicationInfo.getVoicesLocale(ApplicationSettings.locale)});
+                if(Qt.platform.os === "wasm")
+                    DownloadManager.registerResource(
+                                DownloadManager.getVoicesResourceForLocale(ApplicationSettings.locale));
+                else
+                    DownloadManager.updateResource(GCompris.VOICES, {"locale": voicesLocale});
             }
         }
         languageBox.restoreBinding();

@@ -19,9 +19,30 @@
 #include <QMutexLocker>
 #include <QDirIterator>
 #include <QCoreApplication>
+#ifdef Q_OS_WASM
+#include <emscripten.h>
+#endif
 
 const QString DownloadManager::contentsFilename = QLatin1String("Contents");
 DownloadManager *DownloadManager::_instance = nullptr;
+
+#ifdef Q_OS_WASM
+static void syncWasmPersistentStorage()
+{
+    EM_ASM({
+        if (typeof FS !== "undefined" && FS.syncfs) {
+            FS.syncfs(false, err => {
+                if (err)
+                    console.error("GCompris persistent filesystem sync failed", err);
+            });
+        }
+    });
+}
+#else
+static void syncWasmPersistentStorage()
+{
+}
+#endif
 
 const QString DownloadManager::localFolderForData = QLatin1String("data3/");
 /* Public interface: */
@@ -653,6 +674,7 @@ void DownloadManager::finishAllDownloads(int code)
         delete job;
     }
     activeJobs.clear();
+    syncWasmPersistentStorage();
 }
 
 void DownloadManager::finishDownload()

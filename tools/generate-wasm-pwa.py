@@ -67,8 +67,9 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
     js_name = f"{app_name}.js"
     # EXPORT_NAME used in the CMake MODULARIZE=1 link flags must match here.
     entry_fn = "createGComprisApp"
+    html_lang = default_locale.split("_", 1)[0].split("-", 1)[0]
     html = f"""<!doctype html>
-<html lang="de">
+<html lang="{html_lang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -107,7 +108,7 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
   <figure id="status">
     <center style="margin-top:1.5em; line-height:150%">
       <strong>GCompris</strong><br>
-      <div id="loadmsg">Bereit zum Starten</div>
+      <div id="loadmsg">Ready to start</div>
       <button id="start" type="button">Start</button>
     </center>
   </figure>
@@ -129,7 +130,7 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
       const qtscreen = document.getElementById("qtscreen");
       const status   = document.getElementById("status");
       const loadmsg  = document.getElementById("loadmsg");
-      loadmsg.textContent = "GCompris wird geladen...";
+      loadmsg.textContent = "Loading GCompris...";
 
       try {{
         const instance = await qtLoad({{
@@ -165,12 +166,13 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
     (output_dir / "index.html").write_text(html, encoding="utf-8")
 
 
-def write_manifest(output_dir: Path) -> None:
+def write_manifest(output_dir: Path, default_locale: str) -> None:
+    manifest_lang = default_locale.replace("_", "-")
     manifest = {
         "name": "GCompris",
         "short_name": "GCompris",
         "description": "Educational activities for children",
-        "lang": "de",
+        "lang": manifest_lang,
         "start_url": ".",
         "scope": ".",
         "display": "fullscreen",
@@ -276,7 +278,7 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--app-name", required=True)
     parser.add_argument("--version", required=True)
-    parser.add_argument("--default-locale", default="de_DE")
+    parser.add_argument("--default-locale", default="en_US")
     args = parser.parse_args()
 
     if not args.runtime_dir.exists():
@@ -297,7 +299,7 @@ def main() -> None:
     create_icon(logo, args.output_dir / "icon-512.png", 512)
 
     write_index(args.output_dir, args.app_name, args.default_locale)
-    write_manifest(args.output_dir)
+    write_manifest(args.output_dir, args.default_locale)
     write_service_worker(args.output_dir, args.version)
 
     print(f"PWA bundle written to {args.output_dir}")
