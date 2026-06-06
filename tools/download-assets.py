@@ -35,11 +35,12 @@ def download_contents_and_file(subfolder, key, downloadContents=True):
 
 
 # argv[0]: program name
-# argv[1]: assets to download (words, full for full rccs, music, locale to get corresponding locale voices)
+# argv[1]: assets to download (words, full for full rccs, music, all-voices,
+#          locale to get corresponding locale voices)
 # argv[2]: audio format (ogg, mp3, aac)
 # argv[3]: output directory (rcc directory)
 if len(sys.argv) != 4:
-    print("Usage: download-assets.py \"words,full,music,en,fr,pt_BR\" ogg/mp3/aac outputFolder")
+    print("Usage: download-assets.py \"words,full,music,en,fr,pt_BR,all-voices\" ogg/mp3/aac outputFolder")
     sys.exit(0)
 
 """Download the voices and words assets depending on the wanted audio format
@@ -53,6 +54,7 @@ ALL_ASSETS = [x.strip() for x in sys.argv[1].split(",") if len(x)]
 DOWNLOAD_WORDS = "words" in ALL_ASSETS
 DOWNLOAD_FULL = "full" in ALL_ASSETS
 DOWNLOAD_MUSIC = "music" in ALL_ASSETS
+DOWNLOAD_ALL_VOICES = "all-voices" in ALL_ASSETS
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
@@ -68,9 +70,22 @@ if DOWNLOAD_MUSIC:
     ALL_ASSETS.remove("music")
     download_contents_and_file("backgroundMusic/", AUDIO_FORMAT)
 
+if DOWNLOAD_ALL_VOICES:
+    ALL_ASSETS.remove("all-voices")
+    voices_folder = "voices-"+AUDIO_FORMAT+"/"
+    out = OUTPUT_FOLDER + voices_folder
+    os.makedirs(out, exist_ok=True)
+    contents_file = out + "Contents"
+    download_file(DOWNLOAD_PATH+voices_folder+"Contents", out)
+    with open(contents_file) as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) >= 2:
+                download_file(DOWNLOAD_PATH+voices_folder+parts[1], out)
+    ALL_ASSETS = []
+
 if ALL_ASSETS:
     downloadContents = True
     for lang in ALL_ASSETS: # We open, read n times the Contents file, could be optimisable but should not take too much time
         download_contents_and_file("voices-"+AUDIO_FORMAT+"/", "-"+lang+"-", downloadContents)
         downloadContents = False
-

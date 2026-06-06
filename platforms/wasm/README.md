@@ -60,16 +60,17 @@ For the first milestone, verify all of the following:
 
 - The app loads in Chrome, Firefox, and Safari.
 - The initial locale is American English.
-- English voices are available from `data3/voices-mp3`.
-- Selecting another language downloads and registers its matching
+- English voices are available offline from `data3/voices-mp3`.
+- Selecting another language downloads and registers its matching same-origin
   `data3/voices-mp3` bundle when automatic downloads are enabled.
 - A language/reading activity can load localized datasets such as
   `content-de.json` or `default-de.json` when present.
 - The browser offers installation as a PWA.
 - After installation and one complete online launch, the app opens with the
   network disabled.
-- The service worker precaches the generated `.wasm`, `.js`, `.data`, `.rcc`,
-  translation, English voice, words, and music files.
+- The service worker precaches the generated `.js`, `.rcc`, translation,
+  English voice, words, and music files. Large `.wasm`/`.data` files use the
+  browser HTTP cache, and non-default voice packs stay as lazy network assets.
 - Downloaded voice bundles remain available after a reload through Emscripten's
   persistent browser filesystem.
 

@@ -379,7 +379,7 @@ endif()
 
 # predownload assets (voices and images) and install them in the rcc folder
 if(EMSCRIPTEN)
-  set(_gcompris_default_download_assets "words,music,en_US")
+  set(_gcompris_default_download_assets "words,music,en_US,all-voices")
 else()
   set(_gcompris_default_download_assets "")
 endif()

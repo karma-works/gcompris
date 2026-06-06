@@ -16,5 +16,14 @@ src/activities/activities_out.txt
 *.kdev4
 *autosave
 .gstack/
-# WASM PWA: share/ is embedded in gcompris-qt.data (MEMFS preload); no need to track separately
+# WASM PWA: most of share/ is embedded in gcompris-qt.data (MEMFS preload).
+# Keep data3 visible because non-default voice packs are lazy-loaded as
+# same-origin files.
 pwa/share/
+!pwa/share/
+!pwa/share/gcompris-qt/
+pwa/share/gcompris-qt/*
+!pwa/share/gcompris-qt/rcc/
+pwa/share/gcompris-qt/rcc/*
+!pwa/share/gcompris-qt/rcc/data3/
+!pwa/share/gcompris-qt/rcc/data3/**

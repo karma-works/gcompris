@@ -200,13 +200,24 @@ def write_manifest(output_dir: Path, default_locale: str) -> None:
     )
 
 
-def write_service_worker(output_dir: Path, version: str) -> None:
+def is_lazy_voice_pack(filename: str, default_locale: str) -> bool:
+    prefix = "share/gcompris-qt/rcc/data3/voices-"
+    if not filename.startswith(prefix) or not filename.endswith(".rcc"):
+        return False
+    return f"/voices-{default_locale}-" not in f"/{filename}"
+
+
+def write_service_worker(output_dir: Path, version: str, default_locale: str) -> None:
     all_file_list = all_files(output_dir)
     # Exclude large binary blobs from the SW precache — the browser's HTTP cache
     # handles them. Trying to cache a 100+ MB .data file in Cache Storage causes
     # an OOM/quota failure that breaks the entire service worker install.
     BYPASS_EXTENSIONS = {".data", ".wasm"}
-    precache_files = [f for f in all_file_list if not any(f.endswith(ext) for ext in BYPASS_EXTENSIONS)]
+    precache_files = [
+        f for f in all_file_list
+        if not any(f.endswith(ext) for ext in BYPASS_EXTENSIONS)
+        and not is_lazy_voice_pack(f, default_locale)
+    ]
     cache_seed = "\n".join(f"{name}:{file_hash(output_dir / name)}" for name in all_file_list)
     cache_name = f"gcompris-{version}-{hashlib.sha256(cache_seed.encode()).hexdigest()[:12]}"
     worker = f"""const CACHE_NAME = "{cache_name}";
@@ -300,7 +311,7 @@ def main() -> None:
 
     write_index(args.output_dir, args.app_name, args.default_locale)
     write_manifest(args.output_dir, args.default_locale)
-    write_service_worker(args.output_dir, args.version)
+    write_service_worker(args.output_dir, args.version, args.default_locale)
 
     print(f"PWA bundle written to {args.output_dir}")
     print(f"Precached files: {len(all_files(args.output_dir))}")

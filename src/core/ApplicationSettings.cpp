@@ -74,7 +74,11 @@ namespace {
 
     const char *PROGRESS_KEY = "progress";
 
+#if defined(Q_OS_WASM)
+    const char *DEFAULT_DOWNLOAD_SERVER = "share/gcompris-qt/rcc";
+#else
     const char *DEFAULT_DOWNLOAD_SERVER = "https://cdn.kde.org/gcompris";
+#endif
 }
 
 ApplicationSettings *ApplicationSettings::m_instance = nullptr;
@@ -138,6 +142,11 @@ ApplicationSettings::ApplicationSettings(const QString &configPath, QObject *par
     if (m_downloadServerUrl == "http://gcompris.net") {
         setDownloadServerUrl(DEFAULT_DOWNLOAD_SERVER);
     }
+#if defined(Q_OS_WASM)
+    if (m_downloadServerUrl == "https://cdn.kde.org/gcompris") {
+        setDownloadServerUrl(DEFAULT_DOWNLOAD_SERVER);
+    }
+#endif
     m_cachePath = m_config.value(CACHE_PATH_KEY, QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).toString();
 #if defined(UBUNTUTOUCH)
     m_userDataPath = m_config.value(USERDATA_PATH_KEY, QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)).toString();
