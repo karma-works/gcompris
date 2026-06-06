@@ -12,7 +12,7 @@ QT_WASM_PREFIX="${QT_WASM_PREFIX:-}"
 QT_WASM_TOOLCHAIN="${QT_WASM_TOOLCHAIN:-}"
 QT_HOST_PREFIX="${QT_HOST_PREFIX:-}"
 DEFAULT_LOCALE="${GCOMPRIS_WASM_DEFAULT_LOCALE:-en_US}"
-DOWNLOAD_ASSETS="${DOWNLOAD_ASSETS:-words,music,en_US,all-voices}"
+DOWNLOAD_ASSETS="${DOWNLOAD_ASSETS:-words,music,en_US}"
 
 # ── Emscripten ────────────────────────────────────────────────────────────────
 # Source emsdk if emcc is not already on PATH.

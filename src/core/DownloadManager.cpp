@@ -50,6 +50,9 @@ const QString DownloadManager::localFolderForData = QLatin1String("data3/");
 DownloadManager::DownloadManager() :
     accessManager(this), serverUrl(ApplicationSettings::getInstance()->downloadServerUrl())
 {
+#if defined(Q_OS_WASM)
+    serverUrl = QUrl(QStringLiteral("share/gcompris-qt/rcc"));
+#endif
     // Manually add the "ISRG Root X1" certificate to download on older android
     // Check https://bugs.kde.org/show_bug.cgi?id=447572 for more info
 #if defined(Q_OS_ANDROID)

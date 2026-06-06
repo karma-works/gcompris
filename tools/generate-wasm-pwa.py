@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import subprocess
+import urllib.request
 from pathlib import Path
 
 
@@ -22,6 +23,8 @@ RUNTIME_SUFFIXES = {
     ".wasm",
     ".worker.js",
 }
+
+DATA_DOWNLOAD_BASE = "https://cdn.kde.org/gcompris/data3"
 
 
 def copy_file(src: Path, dst: Path) -> None:
@@ -44,6 +47,36 @@ def copy_tree(src: Path, dst: Path) -> None:
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(src, dst)
+
+
+def download_file(url: str, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        return
+    print(f"Downloading lazy asset {destination.name}")
+    with urllib.request.urlopen(url) as response, destination.open("wb") as out_file:
+        shutil.copyfileobj(response, out_file)
+
+
+def populate_lazy_voice_assets(output_dir: Path, app_name: str) -> None:
+    data_dir = output_dir / "share" / app_name / "rcc" / "data3"
+    for voices_dir in sorted(data_dir.glob("voices-*")):
+        contents = voices_dir / "Contents"
+        if not contents.exists():
+            continue
+        # Only populate the active compressed-audio voice directory. Stale
+        # Contents-only directories can exist in incremental build trees.
+        if not any(voices_dir.glob("*.rcc")):
+            continue
+        for line in contents.read_text(encoding="utf-8").splitlines():
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            filename = parts[1]
+            download_file(
+                f"{DATA_DOWNLOAD_BASE}/{voices_dir.name}/{filename}",
+                voices_dir / filename,
+            )
 
 
 def file_hash(path: Path) -> str:
@@ -304,6 +337,7 @@ def main() -> None:
 
     copy_runtime(args.runtime_dir, args.output_dir, args.app_name)
     copy_tree(args.data_dir, args.output_dir / "share" / args.app_name)
+    populate_lazy_voice_assets(args.output_dir, args.app_name)
     logo = Path("logo.png")
     copy_file(logo, args.output_dir / "logo.png")
     create_icon(logo, args.output_dir / "icon-192.png", 192)

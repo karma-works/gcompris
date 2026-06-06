@@ -143,9 +143,7 @@ ApplicationSettings::ApplicationSettings(const QString &configPath, QObject *par
         setDownloadServerUrl(DEFAULT_DOWNLOAD_SERVER);
     }
 #if defined(Q_OS_WASM)
-    if (m_downloadServerUrl == "https://cdn.kde.org/gcompris") {
-        setDownloadServerUrl(DEFAULT_DOWNLOAD_SERVER);
-    }
+    m_downloadServerUrl = QLatin1String(DEFAULT_DOWNLOAD_SERVER);
 #endif
     m_cachePath = m_config.value(CACHE_PATH_KEY, QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).toString();
 #if defined(UBUNTUTOUCH)
