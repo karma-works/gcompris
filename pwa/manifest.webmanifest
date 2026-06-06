@@ -2,7 +2,7 @@
   "name": "GCompris",
   "short_name": "GCompris",
   "description": "Educational activities for children",
-  "lang": "de",
+  "lang": "en-US",
   "start_url": ".",
   "scope": ".",
   "display": "fullscreen",

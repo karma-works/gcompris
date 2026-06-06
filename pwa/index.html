@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -38,7 +38,7 @@
   <figure id="status">
     <center style="margin-top:1.5em; line-height:150%">
       <strong>GCompris</strong><br>
-      <div id="loadmsg">Bereit zum Starten</div>
+      <div id="loadmsg">Ready to start</div>
       <button id="start" type="button">Start</button>
     </center>
   </figure>
@@ -60,11 +60,11 @@
       const qtscreen = document.getElementById("qtscreen");
       const status   = document.getElementById("status");
       const loadmsg  = document.getElementById("loadmsg");
-      loadmsg.textContent = "GCompris wird geladen...";
+      loadmsg.textContent = "Loading GCompris...";
 
       try {
         const instance = await qtLoad({
-          arguments: ["--locale", "de_DE"],
+          arguments: ["--locale", "en_US"],
           qt: {
             entryFunction: window.createGComprisApp,
             containerElements: [qtscreen],
