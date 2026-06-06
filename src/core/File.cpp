@@ -171,22 +171,22 @@ bool File::rmpath(const QString &path)
 }
 
 #ifdef Q_OS_WASM
-#include <emscripten/val.h>
-#include <private/qstdweb_p.h>
-#include <QMimeDatabase>
+#include <QCryptographicHash>
+#include <QFileInfo>
+#include <QUrl>
 
 using StringHash = QHash<QString, QString>;
-Q_GLOBAL_STATIC(StringHash, s_blobUrlCache)
+Q_GLOBAL_STATIC(StringHash, s_mediaUrlCache)
 
 QString File::toBlobUrl(const QString &path)
 {
     const QString filePath = sanitizeUrl(path); // "qrc:/foo" → ":/foo"
 
     if (!filePath.startsWith(QLatin1String(":/")))
-        return path; // Not a Qt resource — pass through unchanged
+        return path; // Not a Qt resource: pass through unchanged.
 
-    auto it = s_blobUrlCache->constFind(filePath);
-    if (it != s_blobUrlCache->constEnd())
+    auto it = s_mediaUrlCache->constFind(filePath);
+    if (it != s_mediaUrlCache->constEnd())
         return it.value();
 
     QFile file(filePath);
@@ -199,20 +199,31 @@ QString File::toBlobUrl(const QString &path)
     if (data.isEmpty())
         return path;
 
-    QMimeDatabase db;
-    const std::string mimeType = db.mimeTypeForData(data).name().toStdString();
-
-    const qstdweb::Blob blob = qstdweb::Blob::copyFrom(
-        data.constData(), static_cast<uint32_t>(data.size()), mimeType);
-
-    if (blob.val().isNull())
+    const QString cacheDir = QLatin1String("/tmp/gcompris-audio-cache");
+    if (!QDir().mkpath(cacheDir))
         return path;
 
-    const std::string blobUrl = emscripten::val::global("URL")
-        .call<std::string>("createObjectURL", blob.val());
+    const QByteArray digest = QCryptographicHash::hash(filePath.toUtf8(), QCryptographicHash::Sha1).toHex();
+    const QString suffix = QFileInfo(filePath).suffix();
+    const QString cachedFilePath = QStringLiteral("%1/%2%3%4")
+        .arg(cacheDir,
+             QString::fromLatin1(digest),
+             suffix.isEmpty() ? QString() : QStringLiteral("."),
+             suffix);
 
-    const QString result = QString::fromStdString(blobUrl);
-    s_blobUrlCache->insert(filePath, result);
+    if (!QFile::exists(cachedFilePath)) {
+        QFile cachedFile(cachedFilePath);
+        if (!cachedFile.open(QIODevice::WriteOnly))
+            return path;
+        if (cachedFile.write(data) != data.size()) {
+            cachedFile.remove();
+            return path;
+        }
+        cachedFile.close();
+    }
+
+    const QString result = QUrl::fromLocalFile(cachedFilePath).toString();
+    s_mediaUrlCache->insert(filePath, result);
     return result;
 }
 #else
