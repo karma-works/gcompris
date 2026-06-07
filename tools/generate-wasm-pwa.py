@@ -164,7 +164,10 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
       document.body.classList.add("loading");
 
       if ("serviceWorker" in navigator)
-        navigator.serviceWorker.register("service-worker.js");
+        // updateViaCache:"none" makes the browser bypass the HTTP cache when
+        // checking service-worker.js for updates, so a new worker is picked up
+        // on the next visit instead of being pinned by GitHub Pages' caching.
+        navigator.serviceWorker.register("service-worker.js", {{ updateViaCache: "none" }});
 
       const qtscreen = document.getElementById("qtscreen");
       const status   = document.getElementById("status");
@@ -302,9 +305,18 @@ def write_service_worker(output_dir: Path, version: str, default_locale: str) ->
 const PRECACHE_URLS = {json.dumps(precache_files, indent=2)};
 
 self.addEventListener("install", event => {{
+  // Precache each URL independently. cache.addAll() rejects atomically if any
+  // single request fails (e.g. a momentarily-missing asset), which would leave
+  // the previous, possibly broken, service worker active. allSettled lets the
+  // new worker install and take over even if some assets are not yet available;
+  // the runtime fetch handler will cache them on demand later.
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(PRECACHE_URLS))
+      .then(cache => Promise.allSettled(
+        PRECACHE_URLS.map(url => cache.add(url).catch(err => {{
+          console.warn("Service worker precache skipped", url, err);
+        }}))
+      ))
       .then(() => self.skipWaiting())
   );
 }});

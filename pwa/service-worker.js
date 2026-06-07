@@ -1,4 +1,4 @@
-const CACHE_NAME = "gcompris-26.1-f62b7ebca652";
+const CACHE_NAME = "gcompris-26.1-df44dc0f5381";
 const PRECACHE_URLS = [
   "gcompris-qt.html",
   "gcompris-qt.js",
@@ -62,9 +62,18 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener("install", event => {
+  // Precache each URL independently. cache.addAll() rejects atomically if any
+  // single request fails (e.g. a momentarily-missing asset), which would leave
+  // the previous, possibly broken, service worker active. allSettled lets the
+  // new worker install and take over even if some assets are not yet available;
+  // the runtime fetch handler will cache them on demand later.
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(PRECACHE_URLS))
+      .then(cache => Promise.allSettled(
+        PRECACHE_URLS.map(url => cache.add(url).catch(err => {
+          console.warn("Service worker precache skipped", url, err);
+        }))
+      ))
       .then(() => self.skipWaiting())
   );
 });

@@ -55,7 +55,10 @@
       document.body.classList.add("loading");
 
       if ("serviceWorker" in navigator)
-        navigator.serviceWorker.register("service-worker.js");
+        // updateViaCache:"none" makes the browser bypass the HTTP cache when
+        // checking service-worker.js for updates, so a new worker is picked up
+        // on the next visit instead of being pinned by GitHub Pages' caching.
+        navigator.serviceWorker.register("service-worker.js", { updateViaCache: "none" });
 
       const qtscreen = document.getElementById("qtscreen");
       const status   = document.getElementById("status");
