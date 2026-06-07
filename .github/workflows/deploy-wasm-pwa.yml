@@ -112,13 +112,19 @@ jobs:
         run: |
           # QT_ROOT_DIR is set by the WASM install step (the last install-qt-action
           # with set-env on); the host lives in the sibling gcc_64 directory.
+          # Use a normalized (no "..") host path and point at its cmake dir so Qt
+          # can resolve the host tool packages (LinguistTools, Quick3DTools,
+          # Graphs) across the cross build -- passing QT_HOST_PATH alone is not
+          # enough; QT_HOST_PATH_CMAKE_DIR must be set too.
+          HOST_QT="$(dirname "$QT_ROOT_DIR")/gcc_64"
           # The wasm package ships qt-cmake without the executable bit, so set it.
           chmod +x "$QT_ROOT_DIR/bin/qt-cmake"
           "$QT_ROOT_DIR/bin/qt-cmake" -G Ninja -S . -B build-wasm \
             -DCMAKE_BUILD_TYPE=Release \
             -DGCOMPRIS_WASM_PWA=ON \
             -DGCOMPRIS_WASM_DEFAULT_LOCALE=en_US \
-            -DQT_HOST_PATH="$QT_ROOT_DIR/../gcc_64"
+            -DQT_HOST_PATH="$HOST_QT" \
+            -DQT_HOST_PATH_CMAKE_DIR="$HOST_QT/lib/cmake"
 
       - name: Build PWA bundle
         run: cmake --build build-wasm --target wasm_pwa_dist -j"$(nproc)"
