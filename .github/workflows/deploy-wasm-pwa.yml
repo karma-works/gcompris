@@ -1,10 +1,23 @@
-name: Deploy GCompris WASM PWA to GitHub Pages
+name: Build & Deploy GCompris WASM PWA to GitHub Pages
+
+# Builds the WebAssembly PWA from source in CI and deploys the freshly built
+# bundle to GitHub Pages. This is the source of truth for what is deployed --
+# the committed pwa/ directory is only a local convenience and is NOT used here,
+# so a source fix can no longer ship a stale or mis-generated bundle.
+#
+# Toolchain is pinned to match the known-good local build:
+#   Qt 6.9.1 (host linux_gcc_64 + target wasm_singlethread), emsdk 3.1.70.
+# If `cmake` configure ever reports a missing Qt component, add the matching
+# aqt module (e.g. qtsensors, qtcharts) to the WASM install step's `modules`.
 
 on:
   push:
     branches: [main]
     paths:
-      - 'pwa/**'
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'tools/**'
       - '.github/workflows/deploy-wasm-pwa.yml'
   workflow_dispatch:
 
@@ -17,18 +30,91 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  QT_VERSION: 6.9.1
+  EM_VERSION: 3.1.70
+
 jobs:
-  deploy:
-    name: Deploy to GitHub Pages
+  build:
+    name: Build WASM PWA
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout (with LFS for .data/.wasm)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: true
+          # The build regenerates every asset (RCC packs, .data, voice/word/music
+          # packs are re-fetched from the KDE CDN), so the committed LFS blobs in
+          # pwa/ are not needed -- skip them to keep the checkout fast.
+          lfs: false
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /usr/share/dotnet /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+      - name: Install Qt host tools (linux_gcc_64)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          # qtbase/qtdeclarative/qtsvg/qttools come in aqt's default desktop set,
+          # which provides the host tools the WASM build invokes (moc, rcc,
+          # lrelease, qmlcachegen, qmltyperegistrar, qmlimportscanner).
+          modules: qtshadertools
+          cache: true
+          set-env: false
+
+      - name: Install Qt for WebAssembly (wasm_singlethread)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: linux
+          target: desktop
+          arch: wasm_singlethread
+          # Multimedia is not in the default set; Svg is added to match the local
+          # install. Sensors/Charts/QmlWorkerScript are optional in CMake and are
+          # intentionally absent (matching the local toolchain).
+          modules: qtmultimedia qtsvg
+          cache: true
+
+      - name: Setup emsdk ${{ env.EM_VERSION }}
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EM_VERSION }}
+          actions-cache-folder: emsdk-cache-${{ env.EM_VERSION }}
+
+      - name: Configure
+        run: |
+          # QT_ROOT_DIR is set by the WASM install step (the last install-qt-action
+          # with set-env on); the host lives in the sibling gcc_64 directory.
+          "$QT_ROOT_DIR/bin/qt-cmake" -G Ninja -S . -B build-wasm \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGCOMPRIS_WASM_PWA=ON \
+            -DGCOMPRIS_WASM_DEFAULT_LOCALE=en_US \
+            -DQT_HOST_PATH="$QT_ROOT_DIR/../gcc_64"
+
+      - name: Build PWA bundle
+        run: cmake --build build-wasm --target wasm_pwa_dist -j"$(nproc)"
+
+      - name: Sanity-check the bundle
+        run: |
+          set -e
+          test -f build-wasm/pwa/gcompris-qt.wasm
+          test -f build-wasm/pwa/gcompris-qt.data
+          test -f build-wasm/pwa/index.html
+          # The activity-metadata pack must register under the .../activities
+          # prefix or the menu loads empty (the bug this pipeline guards against).
+          grep -q "FS.filesystems.IDBFS" build-wasm/pwa/index.html
+          ls -la build-wasm/pwa
+          ls build-wasm/pwa/share/gcompris-qt/rcc/*.rcc | wc -l
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -36,8 +122,16 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './pwa'
+          path: build-wasm/pwa
 
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
