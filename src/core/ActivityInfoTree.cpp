@@ -378,6 +378,10 @@ void ActivityInfoTree::registerResources()
 #endif
     if (!QResource::registerResource(ApplicationInfo::getFilePath("activities.rcc")))
         qDebug() << "Failed to load the resource file activities.rcc";
+#if defined(WITH_RCC) && defined(Q_OS_WASM)
+    if (!QResource::registerResource(ApplicationInfo::getFilePath("activities_light.rcc")))
+        qDebug() << "Failed to load the resource file activities_light.rcc";
+#endif
 }
 
 void ActivityInfoTree::filterBySearch(const QString &text)
