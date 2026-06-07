@@ -139,6 +139,9 @@ jobs:
           # The activity-metadata pack must register under the .../activities
           # prefix or the menu loads empty (the bug this pipeline guards against).
           grep -q "FS.filesystems.IDBFS" build-wasm/pwa/index.html
+          test -f build-wasm/wasm-preload/share/gcompris-qt/rcc/data3/voices-mp3/Contents
+          grep -q "voices-de-" build-wasm/wasm-preload/share/gcompris-qt/rcc/data3/voices-mp3/Contents
+          ! find build-wasm/wasm-preload/share/gcompris-qt/rcc/data3 -name '*.rcc' -print -quit | grep -q .
           ls -la build-wasm/pwa
           ls build-wasm/pwa/share/gcompris-qt/rcc/*.rcc | wc -l
 

@@ -53,20 +53,21 @@ def main() -> None:
             removed += 1
 
     data_dir = rcc_dir / "data3"
-    removed_data_dirs = 0
+    removed_data_files = 0
     if data_dir.exists():
         for child in data_dir.iterdir():
             if child.name in LAZY_DATA_DIRS or child.name.startswith("voices-"):
                 if child.is_dir():
-                    shutil.rmtree(child)
-                    removed_data_dirs += 1
-                else:
+                    for rcc in child.glob("*.rcc"):
+                        rcc.unlink()
+                        removed_data_files += 1
+                elif child.suffix == ".rcc":
                     child.unlink()
-                    removed_data_dirs += 1
+                    removed_data_files += 1
 
     print(
         f"WASM preload tree written to {args.output_dir}; "
-        f"removed {removed} lazy activity RCCs and {removed_data_dirs} lazy data directories"
+        f"removed {removed} lazy activity RCCs and {removed_data_files} lazy data RCCs"
     )
 
 
