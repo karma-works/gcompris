@@ -65,12 +65,13 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          # The WASM build invokes host tools (moc, rcc, lrelease, qmlcachegen,
-          # qmltyperegistrar, qmlimportscanner). The default desktop archive set
-          # already includes qtbase, qtdeclarative, qtsvg and qttools (which
-          # provides the required Qt6LinguistTools/lrelease, resolved cross via
-          # QT_HOST_PATH); qtshadertools provides qsb.
-          modules: qtshadertools
+          # The cross build resolves several host tool packages via QT_HOST_PATH:
+          # lrelease (Qt6LinguistTools, from the qttools archive), qmlcachegen/
+          # qmltyperegistrar (qtdeclarative), Quick3DTools (qtquick3d) and the
+          # Graphs tooling (qtgraphs). Pin the archive set so qttools is present,
+          # and mirror the target's Quick3D/Graphs/shader modules onto the host.
+          archives: qtbase qtdeclarative qtsvg qttools qttranslations icu
+          modules: qtshadertools qtquick3d qtgraphs
           cache: true
           set-env: false
 
