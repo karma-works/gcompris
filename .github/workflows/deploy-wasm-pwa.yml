@@ -56,7 +56,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build ffmpeg
+          sudo apt-get install -y ninja-build ffmpeg gettext
 
       - name: Install Qt host tools (linux_gcc_64)
         uses: jurplel/install-qt-action@v4
