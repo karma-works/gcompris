@@ -81,10 +81,11 @@ jobs:
           host: all_os
           target: wasm
           arch: wasm_singlethread
-          # Multimedia is not in the default set; Svg is added to match the local
-          # install. Sensors/Charts/QmlWorkerScript are optional in CMake and are
-          # intentionally absent (matching the local toolchain).
-          modules: qtmultimedia qtsvg
+          # Multimedia is not in the base wasm package and must be added; Svg,
+          # Declarative and QuickControls2 ship in the base wasm install (qtsvg
+          # is not a separate module here). Sensors/Charts/QmlWorkerScript are
+          # optional in CMake and intentionally absent (matching local).
+          modules: qtmultimedia
           cache: true
 
       - name: Setup emsdk ${{ env.EM_VERSION }}
