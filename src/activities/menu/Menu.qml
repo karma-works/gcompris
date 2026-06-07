@@ -37,6 +37,123 @@ ActivityBase {
     focus: true
     activityInfo: ActivityInfoTree.rootMenu
     isMenu: true
+
+    readonly property var activityDependencies: ({
+        "advanced_colors": ["colors"],
+        "algebra_div": ["algebra_by"],
+        "algebra_minus": ["algebra_by"],
+        "algebra_plus": ["algebra_by"],
+        "align4": ["align4_2players"],
+        "alphabet-sequence": ["planegame"],
+        "baby_tangram": ["tangram"],
+        "babyshapes": ["babymatch"],
+        "bargame_2players": ["bargame"],
+        "braille_fun": ["braille_alphabets"],
+        "checkers_2players": ["checkers"],
+        "chess_2players": ["chess"],
+        "chess_partyend": ["chess"],
+        "chronos": ["babymatch"],
+        "click_on_letter_up": ["click_on_letter"],
+        "clickanddraw": ["number_sequence"],
+        "color_mix_light": ["color_mix"],
+        "compass": ["sketch"],
+        "details": ["babymatch"],
+        "drawing_wheels": ["sketch"],
+        "drawletters": ["number_sequence"],
+        "drawnumbers": ["number_sequence"],
+        "erase_2clic": ["erase"],
+        "erase_clic": ["erase"],
+        "explore_monuments": ["explore_farm_animals"],
+        "explore_world_animals": ["explore_farm_animals"],
+        "explore_world_music": ["explore_farm_animals"],
+        "family_find_relative": ["family"],
+        "find_the_day": ["calendar"],
+        "fractions_find": ["fractions_create"],
+        "geo-country": ["babymatch"],
+        "geography": ["babymatch"],
+        "gnumch-factors": ["gnumch-equality"],
+        "gnumch-inequality": ["gnumch-equality"],
+        "gnumch-multiples": ["gnumch-equality"],
+        "gnumch-primes": ["gnumch-equality"],
+        "graduated_line_use": ["graduated_line_read"],
+        "grammar_classes": ["grammar_analysis"],
+        "hanoi": ["hanoi_real"],
+        "imagename": ["babymatch"],
+        "instruments": ["colors"],
+        "learn_additions": ["learn_digits"],
+        "learn_decimals_additions": ["learn_decimals"],
+        "learn_decimals_subtractions": ["learn_decimals"],
+        "learn_quantities": ["learn_decimals"],
+        "learn_subtractions": ["learn_digits"],
+        "louis-braille": ["braille_alphabets"],
+        "magic-hat-plus": ["magic-hat-minus"],
+        "mazeinvisible": ["maze"],
+        "mazerelative": ["maze"],
+        "memory-case-association": ["memory"],
+        "memory-case-association-tux": ["memory", "memory-case-association"],
+        "memory-enumerate": ["memory"],
+        "memory-math-add": ["memory"],
+        "memory-math-add-minus": ["memory"],
+        "memory-math-add-minus-mult-div": ["memory"],
+        "memory-math-add-minus-mult-div-tux": ["memory"],
+        "memory-math-add-minus-tux": ["memory"],
+        "memory-math-add-tux": ["memory"],
+        "memory-math-div": ["memory"],
+        "memory-math-div-tux": ["memory"],
+        "memory-math-minus": ["memory"],
+        "memory-math-minus-tux": ["memory"],
+        "memory-math-mult": ["memory"],
+        "memory-math-mult-div": ["memory"],
+        "memory-math-mult-div-tux": ["memory"],
+        "memory-math-mult-tux": ["memory"],
+        "memory-sound": ["memory"],
+        "memory-sound-tux": ["memory", "memory-sound"],
+        "memory-tux": ["memory"],
+        "memory-wordnumber": ["memory"],
+        "money_back": ["money"],
+        "money_back_cents": ["money"],
+        "money_cents": ["money"],
+        "nine_men_morris_2players": ["nine_men_morris"],
+        "note_names": ["piano_composition"],
+        "numbers-odd-even": ["planegame"],
+        "ordering_alphabets": ["ordering_numbers"],
+        "ordering_chronology": ["ordering_numbers"],
+        "ordering_sentences": ["ordering_numbers"],
+        "oware_2players": ["oware"],
+        "paintings": ["babymatch"],
+        "path_decoding": ["path_encoding"],
+        "path_decoding_relative": ["path_encoding"],
+        "path_encoding_relative": ["path_encoding"],
+        "play_piano": ["piano_composition"],
+        "play_rhythm": ["piano_composition"],
+        "readingv": ["readingh"],
+        "redraw_symmetrical": ["redraw"],
+        "scalesboard_weight": ["scalesboard"],
+        "scalesboard_weight_avoirdupois": ["scalesboard"],
+        "smallnumbers": ["gletters"],
+        "smallnumbers2": ["gletters"],
+        "tens_complement_calculate": ["tens_complement_swap"],
+        "tic_tac_toe_2players": ["tic_tac_toe"],
+        "vertical_addition": ["vertical_subtraction"],
+        "vertical_subtraction_compensation": ["vertical_subtraction"],
+        "wordsgame": ["gletters"]
+    })
+
+    function activityResourceList(activityName) {
+        const ordered = []
+        const seen = {}
+        function visit(name) {
+            if(seen[name])
+                return
+            seen[name] = true
+            const dependencies = activityDependencies[name] || []
+            for(let i = 0; i < dependencies.length; ++i)
+                visit(dependencies[i])
+            ordered.push(name)
+        }
+        visit(activityName.split('/')[0])
+        return ordered
+    }
     onBack: (to) => {
         if (pageView.currentItem === activity) {
             // Restore focus that has been taken by the loaded activity
@@ -189,6 +306,7 @@ ActivityBase {
 
         property var pendingActivityInfo: null
         property var pendingActivityLevels: []
+        property var pendingActivityResources: []
 
         function startPendingActivity() {
             if(!pendingActivityInfo)
@@ -198,6 +316,7 @@ ActivityBase {
             var currentLevels = pendingActivityLevels
             pendingActivityInfo = null
             pendingActivityLevels = []
+            pendingActivityResources = []
             activityLoader.setSource("qrc:/gcompris/src/activities/" + activityInfo.name,
             {
                 'menu': activity,
@@ -209,14 +328,26 @@ ActivityBase {
             if (activityLoader.status == Loader.Ready) loadActivity()
         }
 
+        function ensureNextPendingActivityResource() {
+            if(!pendingActivityInfo)
+                return
+
+            if(pendingActivityResources.length === 0) {
+                loading.stop()
+                startPendingActivity()
+                return
+            }
+
+            loading.start()
+            DownloadManager.ensureActivityResource(pendingActivityResources[0])
+        }
+
         function prepareActivity(activityInfo, currentLevels) {
             ActivityInfoTree.currentActivity = activityInfo
             pendingActivityInfo = activityInfo
             pendingActivityLevels = currentLevels
-            if(DownloadManager.ensureActivityResource(activityInfo.shortName()))
-                startPendingActivity()
-            else
-                loading.start()
+            pendingActivityResources = activity.activityResourceList(activityInfo.shortName())
+            ensureNextPendingActivityResource()
         }
 
         Loader {
@@ -238,17 +369,20 @@ ActivityBase {
             target: DownloadManager
             function onActivityResourceReady(activityName, success) {
                 if(!activityBackground.pendingActivityInfo ||
-                   activityBackground.pendingActivityInfo.shortName() !== activityName) {
+                   activityBackground.pendingActivityResources.length === 0 ||
+                   activityBackground.pendingActivityResources[0] !== activityName) {
                     return
                 }
-                loading.stop()
                 if(success) {
-                    activityBackground.startPendingActivity()
+                    activityBackground.pendingActivityResources.shift()
+                    activityBackground.ensureNextPendingActivityResource()
                 }
                 else {
+                    loading.stop()
                     console.error("Failed to load activity resource", activityName)
                     activityBackground.pendingActivityInfo = null
                     activityBackground.pendingActivityLevels = []
+                    activityBackground.pendingActivityResources = []
                 }
             }
         }

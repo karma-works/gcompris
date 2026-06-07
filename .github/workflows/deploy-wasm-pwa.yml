@@ -142,6 +142,7 @@ jobs:
           test -f build-wasm/wasm-preload/share/gcompris-qt/rcc/data3/voices-mp3/Contents
           grep -q "voices-de-" build-wasm/wasm-preload/share/gcompris-qt/rcc/data3/voices-mp3/Contents
           ! find build-wasm/wasm-preload/share/gcompris-qt/rcc/data3 -name '*.rcc' -print -quit | grep -q .
+          python3 tools/check-activity-dependencies.py
           ls -la build-wasm/pwa
           ls build-wasm/pwa/share/gcompris-qt/rcc/*.rcc | wc -l
 
