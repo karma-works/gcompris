@@ -33,6 +33,7 @@ endforeach(ACTIVITY ${ACTIVITIES})
 
 GCOMPRIS_ADD_RCC(activities RESOURCES activities_out.txt)
 GCOMPRIS_ADD_RCC(activities_light
+  PREFIX /gcompris/src/activities
   QML_FILES
   */ActivityInfo.qml
   */ActivityConfig.qml

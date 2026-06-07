@@ -175,7 +175,10 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
         const persistentHome = "/home/web_user";
         const mountPersistentStorage = (module) => {{
           const FS = module.FS;
-          if (!FS || !FS.syncfs || typeof IDBFS === "undefined")
+          // IDBFS is registered on FS.filesystems by -lidbfs.js; it is not a
+          // bare global in this callback's scope (it only is inside EM_ASM).
+          const IDBFS = FS && FS.filesystems && FS.filesystems.IDBFS;
+          if (!FS || !FS.syncfs || !IDBFS)
             return;
 
           module.gcomprisPersistentMounts ??= {{}};

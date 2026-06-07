@@ -17,7 +17,7 @@ endfunction()
 function(GCOMPRIS_ADD_RCC resource_path)
 
   set(options)
-  set(oneValueArgs)
+  set(oneValueArgs PREFIX)
   set(multiValueArgs QML_FILES RESOURCES DEPENDENCIES)
   cmake_parse_arguments(_RCC "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(rcc_files "")
@@ -33,7 +33,15 @@ function(GCOMPRIS_ADD_RCC resource_path)
     set(CREATED_QRC "${CMAKE_CURRENT_BINARY_DIR}/${activity}.qrc")
   endif()
 
-  set(ACTIVITY_PATH "/gcompris/src/${resource_path}")
+  # The qresource prefix normally derives from the target name, but a target
+  # may need a prefix that differs from its output name (e.g. activities_light
+  # ships ActivityInfo.qml under the regular .../activities prefix so the menu
+  # resolves them at the same qrc path as the per-activity packs).
+  if(_RCC_PREFIX)
+    set(ACTIVITY_PATH "${_RCC_PREFIX}")
+  else()
+    set(ACTIVITY_PATH "/gcompris/src/${resource_path}")
+  endif()
   file(GLOB QRC_CONTENTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${rcc_files})
   file(GLOB QRC_CONTENTS_ABS ${CMAKE_CURRENT_SOURCE_DIR} ${rcc_files})
 
