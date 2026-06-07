@@ -18,12 +18,16 @@ src/activities/activities_out.txt
 .gstack/
 # WASM PWA: most of share/ is embedded in gcompris-qt.data (MEMFS preload).
 # Keep data3 visible because non-default voice packs are lazy-loaded as
-# same-origin files.
+# same-origin files. Keep rcc/*.rcc too: with lazy-loading, per-activity
+# resource packs are removed from the preload and fetched same-origin at
+# runtime, and the service worker precaches the metadata packs
+# (activities_light.rcc, core.rcc, menu.rcc), so all of them must be deployed.
 pwa/share/
 !pwa/share/
 !pwa/share/gcompris-qt/
 pwa/share/gcompris-qt/*
 !pwa/share/gcompris-qt/rcc/
 pwa/share/gcompris-qt/rcc/*
+!pwa/share/gcompris-qt/rcc/*.rcc
 !pwa/share/gcompris-qt/rcc/data3/
 !pwa/share/gcompris-qt/rcc/data3/**
