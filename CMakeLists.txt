@@ -236,7 +236,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(WITH_RCC "Use rcc for activities instead of qml plugins" ON)
 
-if(EMSCRIPTEN)
+if(EMSCRIPTEN AND NOT GCOMPRIS_WASM_PWA)
   set(_gcompris_default_with_download OFF)
 else()
   set(_gcompris_default_with_download ON)
