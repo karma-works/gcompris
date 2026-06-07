@@ -66,10 +66,11 @@ jobs:
           target: desktop
           arch: linux_gcc_64
           # The WASM build invokes host tools (moc, rcc, lrelease, qmlcachegen,
-          # qmltyperegistrar, qmlimportscanner). qtbase/qtdeclarative come in the
-          # default set; qttools provides the required Qt6LinguistTools package
-          # (lrelease) and qtshadertools provides qsb.
-          modules: qttools qtshadertools
+          # qmltyperegistrar, qmlimportscanner). The default desktop archive set
+          # already includes qtbase, qtdeclarative, qtsvg and qttools (which
+          # provides the required Qt6LinguistTools/lrelease, resolved cross via
+          # QT_HOST_PATH); qtshadertools provides qsb.
+          modules: qtshadertools
           cache: true
           set-env: false
 
@@ -82,11 +83,11 @@ jobs:
           host: all_os
           target: wasm
           arch: wasm_singlethread
-          # Multimedia is not in the base wasm package and must be added; Svg,
-          # Declarative and QuickControls2 ship in the base wasm install (qtsvg
-          # is not a separate module here). Sensors/Charts/QmlWorkerScript are
-          # optional in CMake and intentionally absent (matching local).
-          modules: qtmultimedia
+          # Beyond the base wasm package (qtbase/qtdeclarative/qtsvg/qttools),
+          # GCompris requires Multimedia, and for Qt >= 6.9 also Graphs and
+          # Quick3D (CMakeLists.txt). Sensors/Charts/QmlWorkerScript are optional
+          # in CMake and intentionally absent (matching the local toolchain).
+          modules: qtmultimedia qtgraphs qtquick3d
           cache: true
 
       - name: Setup emsdk ${{ env.EM_VERSION }}
