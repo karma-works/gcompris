@@ -72,7 +72,7 @@ jobs:
           # and mirror the target's Quick3D/Graphs/shader modules onto the host.
           archives: qtbase qtdeclarative qtsvg qttools qttranslations icu
           modules: qtshadertools qtquick3d qtgraphs
-          cache: true
+          cache: false
           set-env: false
 
       - name: Install Qt for WebAssembly (wasm_singlethread)
@@ -89,13 +89,24 @@ jobs:
           # Quick3D (CMakeLists.txt). Sensors/Charts/QmlWorkerScript are optional
           # in CMake and intentionally absent (matching the local toolchain).
           modules: qtmultimedia qtgraphs qtquick3d
-          cache: true
+          cache: false
 
       - name: Setup emsdk ${{ env.EM_VERSION }}
         uses: mymindstorm/setup-emsdk@v14
         with:
           version: ${{ env.EM_VERSION }}
           actions-cache-folder: emsdk-cache-${{ env.EM_VERSION }}
+
+      - name: Inspect toolchain (debug)
+        run: |
+          echo "QT_ROOT_DIR=$QT_ROOT_DIR"
+          HOST="$QT_ROOT_DIR/../gcc_64"
+          echo "Host cmake packages of interest:"
+          ls -d "$HOST"/lib/cmake/Qt6LinguistTools "$HOST"/lib/cmake/Qt6Quick3DTools \
+                 "$HOST"/lib/cmake/Qt6Graphs 2>&1 || true
+          echo "Host lrelease:"; ls -la "$HOST"/bin/lrelease* 2>&1 || true
+          echo "WASM Graphs/Quick3D:"; ls -d "$QT_ROOT_DIR"/lib/cmake/Qt6Graphs \
+                 "$QT_ROOT_DIR"/lib/cmake/Qt6Quick3D 2>&1 || true
 
       - name: Configure
         run: |
