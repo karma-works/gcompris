@@ -98,6 +98,8 @@ jobs:
         run: |
           # QT_ROOT_DIR is set by the WASM install step (the last install-qt-action
           # with set-env on); the host lives in the sibling gcc_64 directory.
+          # The wasm package ships qt-cmake without the executable bit, so set it.
+          chmod +x "$QT_ROOT_DIR/bin/qt-cmake"
           "$QT_ROOT_DIR/bin/qt-cmake" -G Ninja -S . -B build-wasm \
             -DCMAKE_BUILD_TYPE=Release \
             -DGCOMPRIS_WASM_PWA=ON \
