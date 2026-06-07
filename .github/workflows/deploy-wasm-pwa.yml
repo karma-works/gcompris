@@ -65,10 +65,11 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          # qtbase/qtdeclarative/qtsvg/qttools come in aqt's default desktop set,
-          # which provides the host tools the WASM build invokes (moc, rcc,
-          # lrelease, qmlcachegen, qmltyperegistrar, qmlimportscanner).
-          modules: qtshadertools
+          # The WASM build invokes host tools (moc, rcc, lrelease, qmlcachegen,
+          # qmltyperegistrar, qmlimportscanner). qtbase/qtdeclarative come in the
+          # default set; qttools provides the required Qt6LinguistTools package
+          # (lrelease) and qtshadertools provides qsb.
+          modules: qttools qtshadertools
           cache: true
           set-env: false
 
