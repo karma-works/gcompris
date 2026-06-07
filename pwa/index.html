@@ -63,8 +63,30 @@
       loadmsg.textContent = "Loading GCompris...";
 
       try {
+        const persistentHome = "/home/web_user";
+        const mountPersistentStorage = (module) => {
+          const FS = module.FS;
+          if (!FS || !FS.syncfs || typeof IDBFS === "undefined")
+            return;
+
+          module.gcomprisPersistentMounts ??= {};
+          if (!module.gcomprisPersistentMounts[persistentHome]) {
+            FS.mkdirTree(persistentHome);
+            FS.mount(IDBFS, {}, persistentHome);
+            module.gcomprisPersistentMounts[persistentHome] = true;
+          }
+
+          module.addRunDependency("gcompris-idbfs-restore");
+          FS.syncfs(true, err => {
+            if (err)
+              console.error("GCompris persistent filesystem restore failed", err);
+            module.gcomprisPersistentFsReady = true;
+            module.removeRunDependency("gcompris-idbfs-restore");
+          });
+        };
+
         const instance = await qtLoad({
-          arguments: ["--locale", "en_US"],
+          preRun: [mountPersistentStorage],
           qt: {
             entryFunction: window.createGComprisApp,
             containerElements: [qtscreen],

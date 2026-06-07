@@ -37,30 +37,7 @@
 
 #ifdef Q_OS_WASM
 #include <QtPlugin>
-#include <emscripten.h>
 Q_IMPORT_PLUGIN(QWebpPlugin)
-
-static void initializeWasmPersistentStorage(const QString &path)
-{
-    QDir().mkpath(path);
-    const QByteArray pathUtf8 = path.toUtf8();
-    EM_ASM({
-        const path = UTF8ToString($0);
-        Module.gcomprisPersistentMounts = Module.gcomprisPersistentMounts || {};
-        if (!Module.gcomprisPersistentMounts[path]) {
-            FS.mkdirTree(path);
-            FS.mount(IDBFS, {}, path);
-            Module.gcomprisPersistentMounts[path] = true;
-        }
-
-        Module.gcomprisPersistentFsReady = false;
-        FS.syncfs(true, err => {
-            Module.gcomprisPersistentFsReady = true;
-            if (err)
-                console.error("GCompris persistent filesystem restore failed", err);
-        });
-    }, pathUtf8.constData());
-}
 #endif
 
 int main(int argc, char *argv[])
@@ -242,10 +219,6 @@ int main(int argc, char *argv[])
     // Update execution counter
     ApplicationSettings::getInstance()->setExeCount(ApplicationSettings::getInstance()->exeCount() + 1);
 
-#ifdef Q_OS_WASM
-    initializeWasmPersistentStorage(ApplicationSettings::getInstance()->cachePath());
-#endif
-
     if (parser.isSet(clFullscreen)) {
         isFullscreen = true;
     }
@@ -358,7 +331,7 @@ int main(int argc, char *argv[])
     }
 
     // Load translations
-    QString locale = config.value("General/locale", GC_DEFAULT_LOCALE).toString();
+    QString locale = ApplicationSettings::getInstance()->locale();
     ApplicationInfo::getInstance()->switchLocale(QStringLiteral("gcompris_qt"), locale);
 
     qmlRegisterUncreatableMetaObject(

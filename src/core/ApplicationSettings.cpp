@@ -12,6 +12,7 @@
 #include "ApplicationInfo.h"
 
 #include "DownloadManager.h"
+#include "WasmPersistentStorage.h"
 
 #include <qmath.h>
 #include <QGuiApplication>
@@ -76,8 +77,10 @@ namespace {
 
 #if defined(Q_OS_WASM)
     const char *DEFAULT_DOWNLOAD_SERVER = "share/gcompris-qt/rcc";
+    const char *DEFAULT_LOCALE = GCOMPRIS_WASM_DEFAULT_LOCALE;
 #else
     const char *DEFAULT_DOWNLOAD_SERVER = "https://cdn.kde.org/gcompris";
+    const char *DEFAULT_LOCALE = GC_DEFAULT_LOCALE;
 #endif
 }
 
@@ -103,7 +106,7 @@ ApplicationSettings::ApplicationSettings(const QString &configPath, QObject *par
     m_isVirtualKeyboard = m_config.value(VIRTUALKEYBOARD_KEY,
                                          ApplicationInfo::getInstance()->isMobile())
                               .toBool();
-    m_locale = m_config.value(LOCALE_KEY, GC_DEFAULT_LOCALE).toString();
+    m_locale = m_config.value(LOCALE_KEY, QLatin1String(DEFAULT_LOCALE)).toString();
     m_font = m_config.value(FONT_KEY, QLatin1String(GC_DEFAULT_FONT)).toString();
     if (m_font == QLatin1String("Andika-R.otf"))
         m_font = "Andika-R.ttf";
@@ -259,6 +262,7 @@ ApplicationSettings::~ApplicationSettings()
     m_config.endGroup();
 
     m_config.sync();
+    WasmPersistentStorage::sync();
 
     m_instance = nullptr;
 }
@@ -544,12 +548,14 @@ void ApplicationSettings::updateValueInConfig(const QString &group,
     m_config.endGroup();
     if (sync) {
         m_config.sync();
+        WasmPersistentStorage::sync();
     }
 }
 
 void ApplicationSettings::sync()
 {
     m_config.sync();
+    WasmPersistentStorage::sync();
 }
 
 int ApplicationSettings::loadActivityProgress(const QString &activity)

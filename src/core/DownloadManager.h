@@ -16,6 +16,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QMutex>
+#include <QSet>
 #include <QString>
 #include <QUrl>
 #include <QQmlEngine>
@@ -128,6 +129,7 @@ private:
     QUrl serverUrl;
 
     QMap<QString, QString> resourceTypeToLocalFileName; ///< Key constructed from Contents file, values are the filenames in local
+    QSet<QString> activeActivityResourceDownloads;
 
     /**
      * Get the platform-specific path storing downloaded resources.
@@ -303,6 +305,13 @@ public:
      */
     Q_INVOKABLE bool registerResource(const QString &filename);
 
+    /**
+     * Ensures an activity RCC is available and registered before loading the
+     * activity QML. On WebAssembly PWA builds, activity RCCs can be omitted
+     * from the initial .data bundle and fetched lazily from the same origin.
+     */
+    Q_INVOKABLE bool ensureActivityResource(const QString &activityName);
+
 public Q_SLOTS:
 
     /** Emitted when a download in progressing.
@@ -427,6 +436,9 @@ Q_SIGNALS:
      * @sa resourceRegistered
      */
     void backgroundMusicRegistered();
+
+    /** Emitted when a lazy activity RCC is ready to load, or failed. */
+    void activityResourceReady(const QString &activityName, bool success);
 };
 
 #endif /* DOWNLOADMANAGER_H */

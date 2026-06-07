@@ -11,6 +11,7 @@
 #include "DownloadManager.h"
 #include "ApplicationSettings.h"
 #include "ApplicationInfo.h"
+#include "WasmPersistentStorage.h"
 
 #include <QFile>
 #include <QDir>
@@ -19,30 +20,9 @@
 #include <QMutexLocker>
 #include <QDirIterator>
 #include <QCoreApplication>
-#ifdef Q_OS_WASM
-#include <emscripten.h>
-#endif
 
 const QString DownloadManager::contentsFilename = QLatin1String("Contents");
 DownloadManager *DownloadManager::_instance = nullptr;
-
-#ifdef Q_OS_WASM
-static void syncWasmPersistentStorage()
-{
-    EM_ASM({
-        if (typeof FS !== "undefined" && FS.syncfs) {
-            FS.syncfs(false, err => {
-                if (err)
-                    console.error("GCompris persistent filesystem sync failed", err);
-            });
-        }
-    });
-}
-#else
-static void syncWasmPersistentStorage()
-{
-}
-#endif
 
 const QString DownloadManager::localFolderForData = QLatin1String("data3/");
 /* Public interface: */
@@ -615,6 +595,87 @@ bool DownloadManager::registerResource(const QString &filename)
     }
 }
 
+bool DownloadManager::ensureActivityResource(const QString &activityName)
+{
+    const QString shortName = activityName.split('/').constFirst();
+    if (shortName.isEmpty()) {
+        Q_EMIT activityResourceReady(activityName, false);
+        return false;
+    }
+
+    const QString rccName = shortName + QLatin1String(".rcc");
+    const QString existingPath = getAbsoluteResourcePath(rccName);
+    if (!existingPath.isEmpty()) {
+        const bool registered = registerResourceAbsolute(existingPath);
+        Q_EMIT activityResourceReady(shortName, registered);
+        return registered;
+    }
+
+#if defined(Q_OS_WASM)
+    if (activeActivityResourceDownloads.contains(shortName)) {
+        return false;
+    }
+
+    activeActivityResourceDownloads.insert(shortName);
+
+    const QUrl url(serverUrl.toString() + QLatin1Char('/') + rccName);
+    const QString targetFilename = getSystemDownloadPath() + QLatin1Char('/') + rccName;
+    QFileInfo targetInfo(targetFilename);
+    QDir dir;
+    if (!dir.mkpath(targetInfo.path())) {
+        qWarning() << "Could not create activity resource path" << targetInfo.path();
+        activeActivityResourceDownloads.remove(shortName);
+        Q_EMIT activityResourceReady(shortName, false);
+        return false;
+    }
+
+    qDebug() << "Now downloading activity resource" << url << "to" << targetFilename << "...";
+    QNetworkReply *reply = accessManager.get(QNetworkRequest(url));
+    Q_EMIT downloadStarted(QLatin1Char('/') + rccName);
+
+    connect(reply, &QNetworkReply::downloadProgress,
+            this, &DownloadManager::downloadProgress);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply, shortName, targetFilename]() {
+        bool success = false;
+        if (reply->error() == QNetworkReply::NoError) {
+            const QString tempFilename = tempFilenameForFilename(targetFilename);
+            QFile file(tempFilename);
+            if (file.open(QIODevice::WriteOnly)) {
+                file.write(reply->readAll());
+                file.close();
+                if (QFile::exists(targetFilename) && !QFile::remove(targetFilename))
+                    qWarning() << "Could not remove old activity resource" << targetFilename;
+                if (QFile::rename(tempFilename, targetFilename)) {
+                    success = registerResourceAbsolute(targetFilename);
+                    WasmPersistentStorage::sync();
+                }
+                else {
+                    qWarning() << "Could not rename activity resource" << tempFilename << "to" << targetFilename;
+                    QFile::remove(tempFilename);
+                }
+            }
+            else {
+                qWarning() << "Could not open activity resource target" << tempFilename;
+            }
+        }
+        else {
+            qWarning() << "Error downloading activity resource from" << reply->url()
+                       << ":" << reply->error() << ":" << reply->errorString();
+        }
+
+        activeActivityResourceDownloads.remove(shortName);
+        Q_EMIT activityResourceReady(shortName, success);
+        reply->deleteLater();
+    });
+    return false;
+#else
+    qDebug() << "Error while registering activity resource" << rccName;
+    Q_EMIT activityResourceReady(shortName, false);
+    return false;
+#endif
+}
+
 bool DownloadManager::isDataRegistered(const QString &data) const
 {
     QString res = QString(":/gcompris/data/%1").arg(data);
@@ -677,7 +738,7 @@ void DownloadManager::finishAllDownloads(int code)
         delete job;
     }
     activeJobs.clear();
-    syncWasmPersistentStorage();
+    WasmPersistentStorage::sync();
 }
 
 void DownloadManager::finishDownload()

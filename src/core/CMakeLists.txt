@@ -32,6 +32,8 @@ set(gcompris_SRCS
   Directory.h
   DownloadManager.cpp
   DownloadManager.h
+  WasmPersistentStorage.cpp
+  WasmPersistentStorage.h
   GImageGrabber.cpp
   GImageGrabber.h
   config.h.in

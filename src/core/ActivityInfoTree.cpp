@@ -305,7 +305,7 @@ void ActivityInfoTree::initialize(QQmlEngine *engine)
     for (const QString &line: activities) {
         QString url = QString("qrc:/gcompris/src/activities/%1/ActivityInfo.qml").arg(line);
 
-#ifdef WITH_RCC
+#if defined(WITH_RCC) && !defined(Q_OS_WASM)
         if (!QResource::registerResource(
                 ApplicationInfo::getFilePath(line + ".rcc")))
             qDebug() << "Failed to load the resource file " << line + ".rcc";

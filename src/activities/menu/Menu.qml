@@ -187,6 +187,38 @@ ActivityBase {
             ActivityInfoTree.startingLevel = -1
         }
 
+        property var pendingActivityInfo: null
+        property var pendingActivityLevels: []
+
+        function startPendingActivity() {
+            if(!pendingActivityInfo)
+                return
+
+            var activityInfo = pendingActivityInfo
+            var currentLevels = pendingActivityLevels
+            pendingActivityInfo = null
+            pendingActivityLevels = []
+            activityLoader.setSource("qrc:/gcompris/src/activities/" + activityInfo.name,
+            {
+                'menu': activity,
+                'activityInfo': activityInfo,
+                'levelFolder': currentLevels,
+                'audioVoices': audioVoices,
+                'loading': loading
+            })
+            if (activityLoader.status == Loader.Ready) loadActivity()
+        }
+
+        function prepareActivity(activityInfo, currentLevels) {
+            ActivityInfoTree.currentActivity = activityInfo
+            pendingActivityInfo = activityInfo
+            pendingActivityLevels = currentLevels
+            if(DownloadManager.ensureActivityResource(activityInfo.shortName()))
+                startPendingActivity()
+            else
+                loading.start()
+        }
+
         Loader {
             id: activityLoader
             asynchronous: true
@@ -198,6 +230,25 @@ ActivityBase {
                     loadActivity();
                 } else if (status == Loader.Error) {
                     loading.stop();
+                }
+            }
+        }
+
+        Connections {
+            target: DownloadManager
+            function onActivityResourceReady(activityName, success) {
+                if(!activityBackground.pendingActivityInfo ||
+                   activityBackground.pendingActivityInfo.shortName() !== activityName) {
+                    return
+                }
+                loading.stop()
+                if(success) {
+                    activityBackground.startPendingActivity()
+                }
+                else {
+                    console.error("Failed to load activity resource", activityName)
+                    activityBackground.pendingActivityInfo = null
+                    activityBackground.pendingActivityLevels = []
                 }
             }
         }
@@ -621,16 +672,7 @@ ActivityBase {
 
                     if(activity.clickMode === "play") {
                         particles.burst(50)
-                        ActivityInfoTree.currentActivity = activityInfoTreeItem
-                        activityLoader.setSource("qrc:/gcompris/src/activities/" + ActivityInfoTree.currentActivity.name,
-                        {
-                            'menu': activity,
-                            'activityInfo': ActivityInfoTree.currentActivity,
-                            'levelFolder': currentLevels,
-                            'audioVoices': audioVoices,
-                            'loading': loading
-                        })
-                        if (activityLoader.status == Loader.Ready) loadActivity()
+                        activityBackground.prepareActivity(activityInfoTreeItem, currentLevels)
                     }
                     else {
                         // Display configuration
@@ -748,15 +790,7 @@ ActivityBase {
                     ActivityInfoTree.setCurrentActivityFromName(activityName)
                     print(activityName,  ActivityInfoTree.currentActivity.name)
                     var currentLevels = ActivityInfoTree.currentActivity.currentLevels
-                    activityLoader.setSource("qrc:/gcompris/src/activities/" + ActivityInfoTree.currentActivity.name,
-                    {
-                        'menu': activity,
-                        'audioVoices': audioVoices,
-                        'loading': loading,
-                        'activityInfo': ActivityInfoTree.currentActivity,
-                        'levelFolder': currentLevels
-                    })
-                    if (activityLoader.status == Loader.Ready) loadActivity()
+                    activityBackground.prepareActivity(ActivityInfoTree.currentActivity, currentLevels)
                 }
 
                 function onStartNextActivityInSequence() {

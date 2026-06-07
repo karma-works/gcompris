@@ -459,19 +459,37 @@ if(BUILD_TESTING)
 endif()
 
 add_custom_target(binaries)
-add_dependencies(binaries ${GCOMPRIS_EXECUTABLE_NAME} rcc_activities all_activities)
+add_dependencies(binaries ${GCOMPRIS_EXECUTABLE_NAME} rcc_activities rcc_activities_light all_activities)
 if(WITH_RCC)
   add_dependencies(binaries rcc_menu rcc_core)
 endif()
 
 if(EMSCRIPTEN AND GCOMPRIS_WASM_PWA)
-  add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} rcc_activities all_activities getAssets)
+  add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} rcc_activities rcc_activities_light all_activities getAssets)
   if(WITH_RCC)
     add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} rcc_menu rcc_core)
   endif()
   if(TARGET BuildTranslationsgcompris_qt)
     add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} BuildTranslationsgcompris_qt)
   endif()
+
+  set(_wasm_preload_data_dir "${CMAKE_BINARY_DIR}/wasm-preload/${_data_dest_dir}")
+  add_custom_target(wasm_preload_data
+    COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/generate-wasm-preload.py
+      --data-dir ${CMAKE_BINARY_DIR}/${_data_dest_dir}
+      --output-dir ${_wasm_preload_data_dir}
+      --activities-file ${CMAKE_SOURCE_DIR}/src/activities/activities_out.txt
+    DEPENDS rcc_activities rcc_activities_light all_activities getAssets
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generate reduced WebAssembly preload data tree"
+  )
+  if(WITH_RCC)
+    add_dependencies(wasm_preload_data rcc_menu rcc_core)
+  endif()
+  if(TARGET BuildTranslationsgcompris_qt)
+    add_dependencies(wasm_preload_data BuildTranslationsgcompris_qt)
+  endif()
+  add_dependencies(${GCOMPRIS_EXECUTABLE_NAME} wasm_preload_data)
 
   target_link_options(${GCOMPRIS_EXECUTABLE_NAME} PRIVATE
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
@@ -482,7 +500,7 @@ if(EMSCRIPTEN AND GCOMPRIS_WASM_PWA)
     "SHELL:-s ENVIRONMENT=web"
     "SHELL:-s EXPORTED_RUNTIME_METHODS=UTF16ToString,stringToUTF16,JSEvents,specialHTMLTargets,FS,callMain"
     "SHELL:-lidbfs.js"
-    "SHELL:--preload-file ${CMAKE_BINARY_DIR}/${_data_dest_dir}@/${_data_dest_dir}"
+    "SHELL:--preload-file ${_wasm_preload_data_dir}@/${_data_dest_dir}"
   )
 
   add_custom_target(wasm_pwa_dist

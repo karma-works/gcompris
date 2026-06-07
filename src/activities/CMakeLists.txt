@@ -35,6 +35,8 @@ GCOMPRIS_ADD_RCC(activities RESOURCES activities_out.txt)
 GCOMPRIS_ADD_RCC(activities_light
   QML_FILES
   */ActivityInfo.qml
+  */ActivityConfig.qml
+  */resource/*/Data.qml
   RESOURCES
   activities_out.txt
-  *.svg)
+  */*.svg)

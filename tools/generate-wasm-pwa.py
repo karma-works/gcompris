@@ -25,6 +25,12 @@ RUNTIME_SUFFIXES = {
 }
 
 DATA_DOWNLOAD_BASE = "https://cdn.kde.org/gcompris/data3"
+EAGER_RCC = {
+    "activities.rcc",
+    "activities_light.rcc",
+    "core.rcc",
+    "menu.rcc",
+}
 
 
 def copy_file(src: Path, dst: Path) -> None:
@@ -166,8 +172,30 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
       loadmsg.textContent = "Loading GCompris...";
 
       try {{
+        const persistentHome = "/home/web_user";
+        const mountPersistentStorage = (module) => {{
+          const FS = module.FS;
+          if (!FS || !FS.syncfs || typeof IDBFS === "undefined")
+            return;
+
+          module.gcomprisPersistentMounts ??= {{}};
+          if (!module.gcomprisPersistentMounts[persistentHome]) {{
+            FS.mkdirTree(persistentHome);
+            FS.mount(IDBFS, {{}}, persistentHome);
+            module.gcomprisPersistentMounts[persistentHome] = true;
+          }}
+
+          module.addRunDependency("gcompris-idbfs-restore");
+          FS.syncfs(true, err => {{
+            if (err)
+              console.error("GCompris persistent filesystem restore failed", err);
+            module.gcomprisPersistentFsReady = true;
+            module.removeRunDependency("gcompris-idbfs-restore");
+          }});
+        }};
+
         const instance = await qtLoad({{
-          arguments: ["--locale", "{default_locale}"],
+          preRun: [mountPersistentStorage],
           qt: {{
             entryFunction: window.{entry_fn},
             containerElements: [qtscreen],
@@ -233,11 +261,24 @@ def write_manifest(output_dir: Path, default_locale: str) -> None:
     )
 
 
-def is_lazy_voice_pack(filename: str, default_locale: str) -> bool:
-    prefix = "share/gcompris-qt/rcc/data3/voices-"
+def is_lazy_data_pack(filename: str) -> bool:
+    prefix = "share/gcompris-qt/rcc/data3/"
+    if not filename.startswith(prefix):
+        return False
+    relative = filename[len(prefix):]
+    return (
+        relative.startswith("voices-")
+        or relative.startswith("backgroundMusic/")
+        or relative.startswith("words/")
+    )
+
+
+def is_lazy_activity_pack(filename: str) -> bool:
+    prefix = "share/gcompris-qt/rcc/"
     if not filename.startswith(prefix) or not filename.endswith(".rcc"):
         return False
-    return f"/voices-{default_locale}-" not in f"/{filename}"
+    basename = filename.rsplit("/", 1)[-1]
+    return "/" not in filename[len(prefix):] and basename not in EAGER_RCC
 
 
 def write_service_worker(output_dir: Path, version: str, default_locale: str) -> None:
@@ -249,7 +290,8 @@ def write_service_worker(output_dir: Path, version: str, default_locale: str) ->
     precache_files = [
         f for f in all_file_list
         if not any(f.endswith(ext) for ext in BYPASS_EXTENSIONS)
-        and not is_lazy_voice_pack(f, default_locale)
+        and not is_lazy_data_pack(f)
+        and not is_lazy_activity_pack(f)
     ]
     cache_seed = "\n".join(f"{name}:{file_hash(output_dir / name)}" for name in all_file_list)
     cache_name = f"gcompris-{version}-{hashlib.sha256(cache_seed.encode()).hexdigest()[:12]}"
@@ -281,6 +323,30 @@ self.addEventListener("fetch", event => {{
   // Let large binary assets (.data, .wasm) pass through to the browser HTTP cache.
   const url = new URL(event.request.url);
   if (url.pathname.endsWith(".data") || url.pathname.endsWith(".wasm")) {{
+    return;
+  }}
+  const isLazyDataResource = url.pathname.includes("/data3/voices-") ||
+    url.pathname.includes("/data3/backgroundMusic/") ||
+    url.pathname.includes("/data3/words/");
+  const isActivityResource = url.pathname.includes("/share/gcompris-qt/rcc/") &&
+    url.pathname.endsWith(".rcc") &&
+    !url.pathname.includes("/data3/");
+  if (isLazyDataResource || isActivityResource) {{
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache =>
+        cache.match(event.request).then(cached => {{
+          if (cached) {{
+            return cached;
+          }}
+          return fetch(event.request).then(response => {{
+            if (response.ok) {{
+              cache.put(event.request, response.clone());
+            }}
+            return response;
+          }});
+        }})
+      )
+    );
     return;
   }}
   event.respondWith(

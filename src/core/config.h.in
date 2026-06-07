@@ -32,6 +32,8 @@
 #define COMPRESSED_AUDIO "@COMPRESSED_AUDIO@"
 /* Download Allowed */
 #define DOWNLOAD_ALLOWED "@WITH_DOWNLOAD@"
+/* Default locale for WebAssembly when no browser-persisted setting exists */
+#define GCOMPRIS_WASM_DEFAULT_LOCALE "@GCOMPRIS_WASM_DEFAULT_LOCALE@"
 /* Date at which GCompris has been built */
 #define BUILD_DATE "@BUILD_DATE@"
 
