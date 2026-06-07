@@ -86,9 +86,10 @@ jobs:
           arch: wasm_singlethread
           # Beyond the base wasm package (qtbase/qtdeclarative/qtsvg/qttools),
           # GCompris requires Multimedia, and for Qt >= 6.9 also Graphs and
-          # Quick3D (CMakeLists.txt). Sensors/Charts/QmlWorkerScript are optional
-          # in CMake and intentionally absent (matching the local toolchain).
-          modules: qtmultimedia qtgraphs qtquick3d
+          # Quick3D (CMakeLists.txt). Quick3D's RuntimeRender pulls in ShaderTools,
+          # so qtshadertools is required on the target too. Sensors/Charts/
+          # QmlWorkerScript are optional in CMake and intentionally absent.
+          modules: qtmultimedia qtgraphs qtquick3d qtshadertools
           cache: false
 
       - name: Setup emsdk ${{ env.EM_VERSION }}
