@@ -266,7 +266,7 @@ ActivityBase {
                             anchors.fill: parent
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             enabled: !items.buttonsBlocked
-                            hoverEnabled: ApplicationInfo.isMobile ? false : true
+                            hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
 
                             onPressAndHold: {
                                 if (guessColumn.count > 1)
@@ -377,7 +377,7 @@ ActivityBase {
                         anchors.fill: parent
                         acceptedButtons: Qt.LeftButton
                         enabled: chooser.visible && !items.buttonsBlocked
-                        hoverEnabled: ApplicationInfo.isMobile ? false : true
+                        hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
 
                         onClicked: {
                             chooserGrid.colIndex = chooserItem.searchItemIndex;
@@ -456,7 +456,7 @@ ActivityBase {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.LeftButton
                                 enabled: guessRow.rowIndex > 0 && !items.buttonsBlocked
-                                hoverEnabled: ApplicationInfo.isMobile ? false : true
+                                hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
 
                                 property int guessStatus: status
 
@@ -500,7 +500,7 @@ ActivityBase {
                                 acceptedButtons: Qt.LeftButton
                                 enabled: status == Activity.STATUS_UNKNOWN && !bonus.isPlaying
                                 visible: status == Activity.STATUS_UNKNOWN
-                                hoverEnabled: ApplicationInfo.isMobile ? false : true
+                                hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
                                 onDoubleClicked: Activity.ackColor(index, colIndex);
                             }
                         }

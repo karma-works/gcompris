@@ -208,13 +208,13 @@ ActivityBase {
                     origin.x: mapWrapper.width * 0.5
                     origin.y: mapWrapper.height * 0.5
                     axis { x: 1; y: 0; z: 0 }
-                    angle: ApplicationInfo.isMobile ? 0 : -items.tilt.xRotation
+                    angle: ApplicationInfo.isTouchDevice ? 0 : -items.tilt.xRotation
                 },
                 Rotation {
                     origin.x: mapWrapper.width * 0.5
                     origin.y: mapWrapper.height * 0.5
                     axis { x: 0; y: 1; z: 0 }
-                    angle: ApplicationInfo.isMobile ? 0 : items.tilt.yRotation
+                    angle: ApplicationInfo.isTouchDevice ? 0 : items.tilt.yRotation
                 }
             ]
 
@@ -367,7 +367,7 @@ ActivityBase {
 
             TiltSensor {
                 id: tiltSensor
-                active: ApplicationInfo.isMobile ? true : false
+                active: ApplicationInfo.isTouchDevice ? true : false
 
                 onReadingChanged: {
                     if (!tilt.swapAxes) {

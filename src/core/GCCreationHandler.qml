@@ -428,7 +428,7 @@ Rectangle {
             height: loadButton.height
             text: qsTr("Open folder")
             enabled: visible
-            visible: ApplicationInfo.isMobile ? false : true
+            visible: ApplicationInfo.isTouchDevice ? false : true
             theme: "highContrast"
             onClicked: Qt.openUrlExternally(filePrefix + sharedDirectoryPath)
         }
@@ -468,7 +468,7 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width
-        visible: ApplicationSettings.isVirtualKeyboard && !ApplicationInfo.isMobile && !dialogOpened
+        visible: ApplicationSettings.isVirtualKeyboard && !ApplicationInfo.isTouchDevice && !dialogOpened
         onKeypress: {
             var textArray = fileNameInput.text.split("");
             var cursorPosition = fileNameInput.cursorPosition

@@ -140,6 +140,8 @@ jobs:
           # The activity-metadata pack must register under the .../activities
           # prefix or the menu loads empty (the bug this pipeline guards against).
           grep -q "FS.filesystems.IDBFS" build-wasm/pwa/index.html
+          grep -q "touch-action: none" build-wasm/pwa/index.html
+          grep -q "overscroll-behavior: none" build-wasm/pwa/index.html
           grep -q "^WITH_DOWNLOAD:BOOL=ON$" build-wasm/CMakeCache.txt
           test -f build-wasm/wasm-preload/share/gcompris-qt/rcc/data3/voices-mp3/Contents
           grep -q "voices-de-" build-wasm/wasm-preload/share/gcompris-qt/rcc/data3/voices-mp3/Contents

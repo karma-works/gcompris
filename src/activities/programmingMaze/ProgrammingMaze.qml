@@ -510,7 +510,7 @@ ActivityBase {
                 MouseArea {
                     id: runCodeMouseArea
                     anchors.fill: parent
-                    hoverEnabled: ApplicationInfo.isMobile ? false : (!items.isRunCodeEnabled ? false : true)
+                    hoverEnabled: ApplicationInfo.isTouchDevice ? false : (!items.isRunCodeEnabled ? false : true)
                     enabled: items.isRunCodeEnabled
 
                     signal executeCode

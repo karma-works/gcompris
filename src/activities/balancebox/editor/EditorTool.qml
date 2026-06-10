@@ -34,7 +34,7 @@ Item {
         id: mouse
         anchors.fill: parent
 
-        hoverEnabled: ApplicationInfo.isMobile ? false : true
+        hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
         onEntered: root.highlighted = true
         onExited: root.highlighted = false
         onClicked: root.selected = true

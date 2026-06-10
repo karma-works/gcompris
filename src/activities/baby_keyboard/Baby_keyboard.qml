@@ -177,7 +177,7 @@ ActivityBase {
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
             width: parent.width
-            visible: ApplicationSettings.isVirtualKeyboard && !ApplicationInfo.isMobile
+            visible: ApplicationSettings.isVirtualKeyboard && !ApplicationInfo.isTouchDevice
             onKeypress: (text) => {
                 if(text == backspace || text == newline)
                     Activity.playSound();

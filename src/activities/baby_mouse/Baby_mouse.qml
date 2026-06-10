@@ -112,7 +112,7 @@ ActivityBase {
             MouseArea {
                 id: mouseMovement
                 anchors.fill: parent
-                enabled: !ApplicationInfo.isMobile
+                enabled: !ApplicationInfo.isTouchDevice
                 hoverEnabled: true
 
                 property real startX: 0

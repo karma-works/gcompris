@@ -27,7 +27,7 @@ ActivityBase {
 
     // Storing undo with QQuickItemGrabResult uses quite some RAM,
     // so limit more by default on mobile which typically has less RAM than computers
-    property int undoSetting: ApplicationInfo.isMobile ? 5 : 10
+    property int undoSetting: ApplicationInfo.isTouchDevice ? 5 : 10
 
      onActivityNextLevel: {
          Activity.nextLevel()

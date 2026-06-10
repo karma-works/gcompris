@@ -265,7 +265,7 @@ Item {
     }
 
     MouseArea {
-        enabled: !ApplicationInfo.isMobile && item.isClickable
+        enabled: !ApplicationInfo.isTouchDevice && item.isClickable
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: (mouse) => {
@@ -277,7 +277,7 @@ Item {
     }
 
     MultiPointTouchArea {
-        enabled: ApplicationInfo.isMobile && item.isClickable
+        enabled: ApplicationInfo.isTouchDevice && item.isClickable
         anchors.fill: parent
         maximumTouchPoints: 1
         onPressed: {

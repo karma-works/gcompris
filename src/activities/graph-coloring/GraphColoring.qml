@@ -222,7 +222,7 @@ ActivityBase {
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
                         enabled: !bonus.isPlaying
                         z: 3
-                        hoverEnabled: ApplicationInfo.isMobile ? false : true
+                        hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
 
                         onClicked:{
                             smudgeSound.play();
@@ -373,7 +373,7 @@ ActivityBase {
                         acceptedButtons: Qt.LeftButton
                         enabled: !bonus.isPlaying
                         z: 11
-                        hoverEnabled: ApplicationInfo.isMobile ? false : true
+                        hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
 
                         onClicked: {
                             chooserGrid.colorIndex = chooserItem.colorIndex;

@@ -36,7 +36,7 @@ Image {
         anchors.topMargin: -root.exceed
         width: root.width + 2*root.exceed
         height: root.height + 2*root.exceed
-        hoverEnabled: !ApplicationInfo.isMobile
+        hoverEnabled: !ApplicationInfo.isTouchDevice
         onClicked: root.clicked()
         onPressed: root.pressed()
         onReleased: root.released()

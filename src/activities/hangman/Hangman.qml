@@ -162,7 +162,7 @@ ActivityBase {
             // are not available via Keys.onPressed() on linux. Must be
             // disabled on mobile!
             id: textinput
-            enabled: !ApplicationInfo.isMobile
+            enabled: !ApplicationInfo.isTouchDevice
             visible: false
             focus: true
             onTextChanged: {

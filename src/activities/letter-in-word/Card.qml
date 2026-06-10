@@ -69,7 +69,7 @@ Rectangle {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        hoverEnabled: ApplicationInfo.isMobile ? false : true
+        hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
         onClicked: {
             select();
         }

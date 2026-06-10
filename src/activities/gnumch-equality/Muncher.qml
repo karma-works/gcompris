@@ -23,7 +23,7 @@ Creature {
 
     monsterType: "muncher"
     frames: 4
-    Drag.active: ApplicationInfo.isMobile ? muncherArea.drag.active : false
+    Drag.active: ApplicationInfo.isTouchDevice ? muncherArea.drag.active : false
     Drag.hotSpot.x: width / 2
     Drag.hotSpot.y: height / 2
     movable: opacity == 1

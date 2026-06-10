@@ -94,7 +94,7 @@ Image {
         id: mouseArea
         anchors.fill: parent
         enabled: carriageItem.clickEnabled
-        hoverEnabled: ApplicationInfo.isMobile ? false : true
+        hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
 
         onClicked: {
             items.lastSelectedIndex = train.currentIndex

@@ -364,7 +364,7 @@ ActivityBase {
             z: 10
             source: "qrc:/gcompris/src/core/resource/arrows_move.svg"
             sourceSize.width: 40 * ApplicationInfo.ratio
-            opacity: bar.level == 1 && ApplicationInfo.isMobile ? 1 : 0
+            opacity: bar.level == 1 && ApplicationInfo.isTouchDevice ? 1 : 0
         }
 
         DialogHelp {

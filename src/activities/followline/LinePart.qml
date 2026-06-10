@@ -46,7 +46,7 @@ Item {
 
         MouseArea {
             anchors.fill: parent
-            enabled: !ApplicationInfo.isMobile
+            enabled: !ApplicationInfo.isTouchDevice
             hoverEnabled: !Activity.items.inputBlocked
             onEntered: {
                 // Limit to 5 the number of steps we can do at each time.

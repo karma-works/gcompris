@@ -117,11 +117,11 @@ Window {
     }
 
     onApplicationStateChanged: {
-        if (ApplicationInfo.isMobile && applicationState !== Qt.ApplicationActive) {
+        if (ApplicationInfo.isTouchDevice && applicationState !== Qt.ApplicationActive) {
             backgroundMusic.pause();
             audioVoices.stop();
         }
-        else if (ApplicationInfo.isMobile && !isMusicalActivityRunning) {
+        else if (ApplicationInfo.isTouchDevice && !isMusicalActivityRunning) {
             backgroundMusic.resume();
 
         }
@@ -507,7 +507,7 @@ Window {
         id: splash
         // We display the splash screen if we are loading GCompris (startLoadingFinished) and
         // when we are starting an activity via --launch
-        visible: !ApplicationInfo.isMobile && (
+        visible: !ApplicationInfo.isTouchDevice && (
                      !startLoadingFinished || (ActivityInfoTree.startingActivity != "" && (pageView.depth == 1 || loading.active)))
         anchors.fill: parent
     }

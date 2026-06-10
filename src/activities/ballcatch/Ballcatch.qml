@@ -213,7 +213,7 @@ ActivityBase {
             source: "qrc:/gcompris/src/activities/ballcatch/resource/arrow_key.svg"
             sourceSize.width: Math.min(100 * ApplicationInfo.ratio, Math.min(activityBackground.height * 0.2, activityBackground.width * 0.2))
             opacity: items.leftPressed ? 1 : 0.5
-            visible: !ApplicationInfo.isMobile
+            visible: !ApplicationInfo.isTouchDevice
         }
 
         Image {
@@ -225,7 +225,7 @@ ActivityBase {
             source: "qrc:/gcompris/src/activities/ballcatch/resource/arrow_key.svg"
             sourceSize.width: leftShift.sourceSize.width
             opacity: items.rightPressed ? 1 : 0.5
-            visible: !ApplicationInfo.isMobile
+            visible: !ApplicationInfo.isTouchDevice
         }
 
         ListModel {
@@ -243,7 +243,7 @@ ActivityBase {
         // Instructions
         IntroMessage {
             id: message
-            intro: ApplicationInfo.isMobile ? tutoMobile : tutoDesktop
+            intro: ApplicationInfo.isTouchDevice ? tutoMobile : tutoDesktop
             z: 10
         }
 

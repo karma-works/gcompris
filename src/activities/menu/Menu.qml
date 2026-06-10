@@ -894,7 +894,7 @@ ActivityBase {
             Connections {
                 // On mobile with GCompris' virtual keyboard activated:
                 // Force invisibility of Androids virtual keyboard:
-                target: (ApplicationInfo.isMobile && activity.currentTag === "search"
+                target: (ApplicationInfo.isTouchDevice && activity.currentTag === "search"
                          && ApplicationSettings.isVirtualKeyboard) ? Qt.inputMethod : null
                 function onVisibleChanged() {
                     if (ApplicationSettings.isVirtualKeyboard && visible)
@@ -1002,20 +1002,20 @@ ActivityBase {
                 // isMobile && !ApplicationSettings.isVirtualKeyboard
                 // in conjunction with auto-hiding the inputMethod to always get
                 // an input-cursor:
-                activeFocusOnPress: true //ApplicationInfo.isMobile ? !ApplicationSettings.isVirtualKeyboard : true
+                activeFocusOnPress: true //ApplicationInfo.isTouchDevice ? !ApplicationSettings.isVirtualKeyboard : true
 
                 background: Rectangle {
                     opacity: 0
                 }
 
                 Keys.onReturnPressed: {
-                    if (ApplicationInfo.isMobile && !ApplicationSettings.isVirtualKeyboard)
+                    if (ApplicationInfo.isTouchDevice && !ApplicationSettings.isVirtualKeyboard)
                         Qt.inputMethod.hide();
                     activity.focus = true;
                 }
 
                 onEditingFinished: {
-                    if (ApplicationInfo.isMobile && !ApplicationSettings.isVirtualKeyboard)
+                    if (ApplicationInfo.isTouchDevice && !ApplicationSettings.isVirtualKeyboard)
                         Qt.inputMethod.hide();
                     activity.focus = true;
                 }
@@ -1202,10 +1202,10 @@ ActivityBase {
             // BUG: on Windows, dynamic values in BarEnumContent are not working, so using intermediate properties as workaround to display serverStatus button
             property bool connectionAccepted: ApplicationInfo.serverConnectionAccepted
             property BarEnumContent defaultContent: BarEnumContent {
-                value: help | config | activityConfig | about | (ApplicationInfo.isMobile ? 0 : exit)
+                value: help | config | activityConfig | about | (ApplicationInfo.isTouchDevice ? 0 : exit)
             }
             property BarEnumContent contentWithServerStatus: BarEnumContent {
-                value: help | config | activityConfig | about | (ApplicationInfo.isMobile ? 0 : exit) | serverStatus
+                value: help | config | activityConfig | about | (ApplicationInfo.isTouchDevice ? 0 : exit) | serverStatus
             }
             onConnectionAcceptedChanged: {
                 if(connectionAccepted) {

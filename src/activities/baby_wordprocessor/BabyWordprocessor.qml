@@ -110,7 +110,7 @@ ActivityBase {
             width: controls.width
 
             property bool isEnoughSpace: {
-                if(ApplicationInfo.isMobile && parent.horizontalMode)
+                if(ApplicationInfo.isTouchDevice && parent.horizontalMode)
                     return false
                 return (parent.height - keyboard.height - controls.height) > 2.5 * loadButton.height
             }
@@ -327,7 +327,7 @@ ActivityBase {
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
             width: parent.width
-            visible: ApplicationSettings.isVirtualKeyboard && !ApplicationInfo.isMobile && !hide
+            visible: ApplicationSettings.isVirtualKeyboard && !ApplicationInfo.isTouchDevice && !hide
             onKeypress: {
                 if(text == backspace) {
                     edit.backspace();

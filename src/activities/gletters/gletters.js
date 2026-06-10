@@ -545,6 +545,6 @@ function playLetter(letter) {
 }
 
 function focusTextInput() {
-    if (!GCompris.ApplicationInfo.isMobile && items && items.textinput)
+    if (!GCompris.ApplicationInfo.isTouchDevice && items && items.textinput)
         items.textinput.forceActiveFocus();
 }

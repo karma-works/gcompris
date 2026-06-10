@@ -99,6 +99,6 @@ Item {
         height: goalBg.height
         sourceSize.height: height
         fillMode: Image.PreserveAspectFit
-        opacity: ApplicationInfo.isMobile ? 1 : 0
+        opacity: ApplicationInfo.isTouchDevice ? 1 : 0
     }
 }

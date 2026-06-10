@@ -44,6 +44,6 @@ ActivityInfo {
     qsTr("Finally, to load your level set, click on the 'Load saved levels' button.")
   credit: ""
   section: "mobile fun"
-  enabled: ApplicationInfo.isBox2DInstalled && (!ApplicationInfo.isMobile || ApplicationInfo.sensorIsSupported("QTiltSensor"))
+  enabled: ApplicationInfo.isBox2DInstalled && (!ApplicationInfo.isTouchDevice || ApplicationInfo.sensorIsSupported("QTiltSensor"))
   createdInVersion: 5000
 }

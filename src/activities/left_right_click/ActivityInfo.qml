@@ -24,5 +24,5 @@ ActivityInfo {
   credit: ""
   section: "computer mouse"
   createdInVersion: 30000
-  enabled: !ApplicationInfo.isMobile ? true : false
+  enabled: !ApplicationInfo.isTouchDevice ? true : false
 }

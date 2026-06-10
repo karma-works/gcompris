@@ -26,7 +26,7 @@ function init(loadedItems_, wordList_, mode_) {
     wordList = wordList_
     // Do not set the focus on mobile or the mobile OS keyboard will pop up
     // instead of ours.
-    if(!GCompris.ApplicationInfo.isMobile)
+    if(!GCompris.ApplicationInfo.isTouchDevice)
         spellItems.answer.forceActiveFocus()
     initLevel()
     return true

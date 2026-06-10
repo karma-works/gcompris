@@ -102,7 +102,7 @@ ActivityBase {
             // disabled on mobile!
             id: textinput
             anchors.centerIn: activityBackground
-            enabled: !ApplicationInfo.isMobile
+            enabled: !ApplicationInfo.isTouchDevice
             focus: true
             visible: false
 

@@ -68,8 +68,8 @@ Image {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        enabled: block.type !== "erase" || !ApplicationInfo.isMobile
-        hoverEnabled: block.type === "erase" && !ApplicationInfo.isMobile
+        enabled: block.type !== "erase" || !ApplicationInfo.isTouchDevice
+        hoverEnabled: block.type === "erase" && !ApplicationInfo.isTouchDevice
         onClicked: {
             if(block.type === "click") {
                 enabled = false

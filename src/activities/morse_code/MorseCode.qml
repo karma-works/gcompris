@@ -51,7 +51,7 @@ ActivityBase {
         }
 
         onResetFocus: {
-            if (!ApplicationInfo.isMobile)
+            if (!ApplicationInfo.isTouchDevice)
                 textInput.forceActiveFocus();
         }
 
@@ -86,7 +86,7 @@ ActivityBase {
             }
 
             function start() {
-                if (!ApplicationInfo.isMobile)
+                if (!ApplicationInfo.isTouchDevice)
                     textInput.forceActiveFocus();
                 items.currentLevel = Core.getInitialLevel(items.numberOfLevel);
                 initLevel()

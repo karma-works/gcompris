@@ -332,7 +332,7 @@ Item {
             onCheckedChanged: {
                 isFullscreen = checked;
             }
-            visible: !ApplicationInfo.isMobile
+            visible: !ApplicationInfo.isTouchDevice
         }
 
         GCDialogCheckBox {
@@ -360,7 +360,7 @@ Item {
             width: dialogConfig.contentWidth
             checked: exitConfirmation
             text: qsTr("Ask for confirmation to exit")
-            visible: ApplicationInfo.isMobile ? false : true
+            visible: ApplicationInfo.isTouchDevice ? false : true
             onCheckedChanged: {
                 exitConfirmation = checked;
             }

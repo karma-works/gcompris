@@ -20,6 +20,8 @@
 #include <QQuickWindow>
 #ifndef Q_OS_WASM
 #include <QSensor>
+#else
+#include <emscripten.h>
 #endif
 
 #include <QDebug>
@@ -38,6 +40,15 @@ ApplicationInfo::ApplicationInfo(QObject *parent) :
     m_isMobile = true;
 #else
     m_isMobile = false;
+#endif
+    m_isTouchDevice = m_isMobile;
+
+#if defined(Q_OS_WASM)
+    m_isTouchDevice = EM_ASM_INT({
+        const hasTouchPoints = navigator.maxTouchPoints && navigator.maxTouchPoints > 0;
+        const hasCoarsePointer = self.matchMedia && self.matchMedia("(any-pointer: coarse)").matches;
+        return hasTouchPoints || hasCoarsePointer ? 1 : 0;
+    });
 #endif
 
 #if defined(Q_OS_ANDROID)
@@ -76,12 +87,12 @@ ApplicationInfo::ApplicationInfo(QObject *parent) :
     qreal dpi = qApp->primaryScreen()->logicalDotsPerInch();
     m_fontRatio = qMax(qreal(1.0), qMin(height * refDpi / (dpi * refHeight), width * refDpi / (dpi * refWidth)));
 #endif
-    m_isPortraitMode = m_isMobile ? rect.height() > rect.width() : false;
-    m_applicationWidth = m_isMobile ? rect.width() : 1120;
+    m_isPortraitMode = m_isTouchDevice ? rect.height() > rect.width() : false;
+    m_applicationWidth = m_isTouchDevice ? rect.width() : 1120;
 
     m_useSoftwareRenderer = false;
 
-    if (m_isMobile)
+    if (m_isTouchDevice)
         connect(qApp->primaryScreen(), &QScreen::physicalSizeChanged, this, &ApplicationInfo::notifyPortraitMode);
 
 // @FIXME this does not work on iOS: https://bugreports.qt.io/browse/QTBUG-50624

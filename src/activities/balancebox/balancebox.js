@@ -74,7 +74,7 @@ function start(items_) {
     items = items_;
 
     if (items.mode === "play") {
-        if (GCompris.ApplicationInfo.isMobile) {
+        if (GCompris.ApplicationInfo.isTouchDevice) {
             // we don't have many touch events, therefore disable screensaver on android:
             GCompris.ApplicationInfo.setKeepScreenOn(true);
             // lock screen orientation: (as changing orientation would reset the level...)
@@ -246,7 +246,7 @@ function stop() {
         goal = null
     }
     // unlock screen orientation
-    if (GCompris.ApplicationInfo.isMobile) {
+    if (GCompris.ApplicationInfo.isTouchDevice) {
         GCompris.ApplicationInfo.setKeepScreenOn(false);
         GCompris.ApplicationInfo.setRequestedOrientation(-1);
     }

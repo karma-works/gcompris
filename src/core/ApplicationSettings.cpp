@@ -104,7 +104,7 @@ ApplicationSettings::ApplicationSettings(const QString &configPath, QObject *par
     m_previousWidth = m_config.value(PREVIOUS_WIDTH_KEY, screenSize.width()).toUInt();
     m_isAudioVoicesEnabled = m_config.value(ENABLE_AUDIO_VOICES_KEY, true).toBool();
     m_isVirtualKeyboard = m_config.value(VIRTUALKEYBOARD_KEY,
-                                         ApplicationInfo::getInstance()->isMobile())
+                                         ApplicationInfo::getInstance()->isTouchDevice())
                               .toBool();
     m_locale = m_config.value(LOCALE_KEY, QLatin1String(DEFAULT_LOCALE)).toString();
     m_font = m_config.value(FONT_KEY, QLatin1String(GC_DEFAULT_FONT)).toString();
@@ -125,10 +125,10 @@ ApplicationSettings::ApplicationSettings(const QString &configPath, QObject *par
     m_isHomeButtonVisible = m_config.value(HOME_BUTTON_VISIBLE_KEY, true).toBool();
 
     m_sectionVisible = m_config.value(SECTION_VISIBLE, true).toBool();
-    m_exitConfirmation = m_config.value(EXIT_CONFIRMATION, ApplicationInfo::getInstance()->isMobile() ? true : false).toBool();
+    m_exitConfirmation = m_config.value(EXIT_CONFIRMATION, ApplicationInfo::getInstance()->isTouchDevice() ? true : false).toBool();
 
     m_isAutomaticDownloadsEnabled = m_config.value(ENABLE_AUTOMATIC_DOWNLOADS,
-                                                   !ApplicationInfo::getInstance()->isMobile() && ApplicationInfo::isDownloadAllowed())
+                                                   !ApplicationInfo::getInstance()->isTouchDevice() && ApplicationInfo::isDownloadAllowed())
                                         .toBool();
     m_filterLevelMin = m_config.value(FILTER_LEVEL_MIN, 1).toUInt();
     m_filterLevelMax = m_config.value(FILTER_LEVEL_MAX, 6).toUInt();

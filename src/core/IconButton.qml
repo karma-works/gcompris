@@ -42,6 +42,6 @@ Item {
     ToolTip.delay: 1000
     ToolTip.timeout: 5000
     // disable tooltip on mobile as they sometime appear for weird reasons...
-    ToolTip.visible: (toolTip !== "") && buttonArea.containsMouse && !ApplicationInfo.isMobile
+    ToolTip.visible: (toolTip !== "") && buttonArea.containsMouse && !ApplicationInfo.isTouchDevice
     ToolTip.text: toolTip
 }

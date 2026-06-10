@@ -118,8 +118,24 @@ def write_index(output_dir: Path, app_name: str, default_locale: str) -> None:
   <link rel="icon" href="logo.png">
   <title>GCompris</title>
   <style>
-    html, body {{ padding: 0; margin: 0; overflow: hidden; height: 100%; background: #102d42; }}
-    #qtscreen {{ width: 100%; height: 100%; }}
+    html, body {{
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+      height: 100%;
+      background: #102d42;
+      overscroll-behavior: none;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }}
+    #qtscreen {{
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }}
     #status {{
       position: fixed;
       inset: 0;

@@ -159,16 +159,16 @@ Item {
         property int toolPattern: 0
         readonly property int defaultToolPattern: 0
         // on mobile, the smoothing can actually make it worse, so better set it to 0 by default there...
-        property int toolSmoothing: ApplicationInfo.isMobile ? 0 : 1
-        readonly property int defaultToolSmoothing: ApplicationInfo.isMobile ? 0 : 1
+        property int toolSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
+        readonly property int defaultToolSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
 
         // eraserMode
         eraserSize: 10
         defaultEraserSize: 10
         property int eraserPattern: 0
         readonly property int defaultEraserPattern: 0
-        property int eraserSmoothing: ApplicationInfo.isMobile ? 0 : 1
-        readonly property int defaultEraserSmoothing: ApplicationInfo.isMobile ? 0 : 1
+        property int eraserSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
+        readonly property int defaultEraserSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
 
         readonly property int smoothingRadius: (items.eraserMode ? eraserSmoothing : toolSmoothing) * 5
         readonly property real smoothingFriction: 0.05
@@ -209,16 +209,16 @@ Item {
         timerInterval: 15
         property int toolPattern: 0
         readonly property int defaultToolPattern: 0
-        property int toolSmoothing: ApplicationInfo.isMobile ? 0 : 1
-        readonly property int defaultToolSmoothing: ApplicationInfo.isMobile ? 0 : 1
+        property int toolSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
+        readonly property int defaultToolSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
 
         // eraserMode
         eraserSize: 1
         defaultEraserSize: 1
         property int eraserPattern: 0
         readonly property int defaultEraserPattern: 0
-        property int eraserSmoothing: ApplicationInfo.isMobile ? 0 : 1
-        readonly property int defaultEraserSmoothing: ApplicationInfo.isMobile ? 0 : 1
+        property int eraserSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
+        readonly property int defaultEraserSmoothing: ApplicationInfo.isTouchDevice ? 0 : 1
 
         readonly property int smoothingRadius: (items.eraserMode ? eraserSmoothing : toolSmoothing) * 5
         readonly property real smoothingFriction: 0.05

@@ -61,6 +61,14 @@ class ApplicationInfo : public QObject
     Q_PROPERTY(bool isMobile READ isMobile CONSTANT)
 
     /**
+     * Whether the current input device is primarily touch based.
+     *
+     * This differs from isMobile for browser builds: a WebAssembly build can
+     * run on either a desktop pointer device or a touch screen.
+     */
+    Q_PROPERTY(bool isTouchDevice READ isTouchDevice CONSTANT)
+
+    /**
      * Whether the current platform supports fragment shaders.
      *
      * This flag is used in some core modules to selectively deactivate
@@ -276,6 +284,7 @@ public:
     bool isPortraitMode() const { return m_isPortraitMode; }
     void setIsPortraitMode(const bool newMode);
     bool isMobile() const { return m_isMobile; }
+    bool isTouchDevice() const { return m_isTouchDevice; }
     bool hasShader() const
     {
 #if defined(Q_OS_ANDROID)
@@ -489,6 +498,7 @@ private:
     Platform m_platform;
     bool m_isPortraitMode;
     bool m_isMobile;
+    bool m_isTouchDevice;
     bool m_useSoftwareRenderer;
     bool m_isBox2DInstalled;
     qreal m_ratio;

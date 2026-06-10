@@ -553,7 +553,7 @@ Item {
                                 id: cellMouse
                                 anchors.fill: parent
 
-                                hoverEnabled: ApplicationInfo.isMobile ? false : true
+                                hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
                                 onEntered: cell.highlighted = true
                                 onExited: cell.highlighted = false
                                 onClicked: {

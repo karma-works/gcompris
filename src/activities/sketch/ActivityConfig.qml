@@ -17,7 +17,7 @@ Item {
     id: activityConfiguration
     property Item configBackground
     property alias undoSlider: undoSlider
-    property int undoSetting: ApplicationInfo.isMobile ? 5 : 10
+    property int undoSetting: ApplicationInfo.isTouchDevice ? 5 : 10
     width: flick.width
     height: childrenRect.height
 
@@ -57,7 +57,7 @@ Item {
             activityConfiguration.undoSetting = dataToSave.undoSetting
         }
         else {
-            activityConfiguration.undoSetting = ApplicationInfo.isMobile ? 5 : 10
+            activityConfiguration.undoSetting = ApplicationInfo.isTouchDevice ? 5 : 10
         }
     }
 

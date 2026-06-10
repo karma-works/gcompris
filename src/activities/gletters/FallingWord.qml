@@ -54,7 +54,7 @@ Item {
              *
              * FIXME: this works only on desktop systems, on android this
              * shifts the typed word a few pixels down. */
-            if (!ApplicationInfo.isMobile)
+            if (!ApplicationInfo.isTouchDevice)
                 highlightedWordText.text += "\u200C";
         }
     }

@@ -157,7 +157,7 @@ ActivityBase {
 
         MouseArea {
             anchors.fill: parent
-            enabled: !ApplicationInfo.isMobile
+            enabled: !ApplicationInfo.isTouchDevice
             hoverEnabled: true
             onPositionChanged: {
                 Activity.movedOut = true;
@@ -170,7 +170,7 @@ ActivityBase {
         MultiPointTouchArea {
             anchors.fill: parent
             maximumTouchPoints: 1
-            enabled: ApplicationInfo.isMobile && !items.inputBlocked
+            enabled: ApplicationInfo.isTouchDevice && !items.inputBlocked
             onTouchUpdated: (touchPoints) => {
                 for(var i in touchPoints) {
                     var touch = touchPoints[i]

@@ -40,7 +40,7 @@ Item {
     }
 
     function restoreFocus() {
-        if(!ApplicationInfo.isMobile)
+        if(!ApplicationInfo.isTouchDevice)
             answer.forceActiveFocus();
     }
 
@@ -191,7 +191,7 @@ Item {
                 color: GCStyle.darkText
                 cursorVisible: true
                 focus: false
-                activeFocusOnPress: !ApplicationInfo.isMobile
+                activeFocusOnPress: !ApplicationInfo.isTouchDevice
                 visible: true
                 horizontalAlignment: TextInput.AlignHCenter
                 verticalAlignment: TextInput.AlignVCenter

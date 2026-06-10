@@ -74,7 +74,7 @@ Item {
             id: mouseAreaText
             anchors.fill: planetNameText
             enabled: !message.visible && !hintMode
-            hoverEnabled: ApplicationInfo.isMobile ? false : true
+            hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
             onEntered: planetHovered = true
             onExited: planetHovered = false
             onClicked: {
@@ -116,7 +116,7 @@ Item {
             id: mouseArea
             anchors.fill: planetItem
             enabled: !message.visible && !hintMode
-            hoverEnabled: ApplicationInfo.isMobile ? false : true
+            hoverEnabled: ApplicationInfo.isTouchDevice ? false : true
             onEntered: planetHovered = true
             onExited: planetHovered = false
             onClicked: {

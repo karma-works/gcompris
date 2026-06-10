@@ -78,7 +78,7 @@ ActivityBase {
             property double spaceshipY: activityBackground.height  * 0.5
             property int borderMargin: spaceship.width * 0.5
             property int rightMargin: activityBackground.width - borderMargin
-            property bool onScreenControls: ApplicationInfo.isMobile
+            property bool onScreenControls: ApplicationInfo.isTouchDevice
             property alias explosion: explosion
         }
 
