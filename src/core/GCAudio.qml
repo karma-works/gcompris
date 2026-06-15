@@ -101,6 +101,7 @@ Item {
      * Playback queue.
      */
     property var files: []
+    property string currentMediaUrl: ""
 
     /**
      * Emitted in case of error.
@@ -141,10 +142,10 @@ Item {
 
         if(file) {
             // Setting the source to "" on Linux fix a case where the sound is no more played if you play twice the same sound in a row
-            source = ""
+            _clearMediaSource()
             // On WASM, Qt's media player only handles file:// and http(s)://;
             // toBlobUrl() converts qrc:// resources to file:// URLs it can load.
-            source = fileId.toBlobUrl(file)
+            _setMediaSource(file)
         }
         if(!muted) {
             audio.play()
@@ -217,17 +218,30 @@ Item {
 
         var nextFile = files.shift()
         if(nextFile === '') {
-            source = ""
+            _clearMediaSource()
             gcaudio.done()
         } else {
             // on Ubuntu Touch, emptying the source result in an Audio error which triggers that method again endlessly
             if (ApplicationInfo.platform !== ApplicationInfo.UbuntuTouchOS) {
-               source = ""
+               _clearMediaSource()
             }
-            source = fileId.toBlobUrl(nextFile)
+            _setMediaSource(nextFile)
             if(!muted)
                 audio.play()
         }
+    }
+
+    function _setMediaSource(file) {
+        source = fileId.toBlobUrl(file)
+        currentMediaUrl = source
+    }
+
+    function _clearMediaSource() {
+        var previousMediaUrl = currentMediaUrl
+        source = ""
+        currentMediaUrl = ""
+        if(previousMediaUrl !== "")
+            fileId.releaseBlobUrl(previousMediaUrl)
     }
 
     MediaPlayer {
@@ -250,7 +264,7 @@ Item {
 
         onErrorOccurred: (error, errorString) => {
             // This file cannot be played, remove it from the source asap
-            source = ""
+            _clearMediaSource()
             if(files.length) {
                 silenceTimer.start()
             }
@@ -262,6 +276,7 @@ Item {
             if(playbackState !== MediaPlayer.StoppedState) {
                 return;
             }
+            _clearMediaSource()
             if(files.length) {
                 silenceTimer.start()
             }

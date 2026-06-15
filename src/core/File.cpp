@@ -226,10 +226,47 @@ QString File::toBlobUrl(const QString &path)
     s_mediaUrlCache->insert(filePath, result);
     return result;
 }
+
+void File::releaseBlobUrl(const QString &path)
+{
+    if (path.isEmpty())
+        return;
+
+    QString resourcePath = sanitizeUrl(path);
+    auto it = s_mediaUrlCache->constFind(resourcePath);
+    QString cachedFileUrl;
+
+    if (it != s_mediaUrlCache->constEnd()) {
+        cachedFileUrl = it.value();
+    } else {
+        cachedFileUrl = path;
+        for (auto cacheIt = s_mediaUrlCache->constBegin(); cacheIt != s_mediaUrlCache->constEnd(); ++cacheIt) {
+            if (cacheIt.value() == path || QUrl(cacheIt.value()).toLocalFile() == resourcePath) {
+                resourcePath = cacheIt.key();
+                cachedFileUrl = cacheIt.value();
+                break;
+            }
+        }
+    }
+
+    if (!resourcePath.startsWith(QLatin1String(":/")))
+        return;
+
+    const QString cachedFilePath = QUrl(cachedFileUrl).toLocalFile();
+    if (!cachedFilePath.isEmpty())
+        QFile::remove(cachedFilePath);
+
+    s_mediaUrlCache->remove(resourcePath);
+}
 #else
 QString File::toBlobUrl(const QString &path)
 {
     return path;
+}
+
+void File::releaseBlobUrl(const QString &path)
+{
+    Q_UNUSED(path)
 }
 #endif
 

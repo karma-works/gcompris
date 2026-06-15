@@ -126,6 +126,16 @@ public:
      */
     Q_INVOKABLE static QString toBlobUrl(const QString &path);
 
+    /**
+     * Releases a WebAssembly media-player URL previously returned by toBlobUrl().
+     *
+     * On WebAssembly this removes the copied file from Emscripten's in-memory
+     * filesystem and drops the cache entry. On non-WASM platforms this is a no-op.
+     *
+     * @param path qrc://, :/ or file:// URL to release.
+     */
+    Q_INVOKABLE static void releaseBlobUrl(const QString &path);
+
     /// @cond INTERNAL_DOCS
     QString name() const;
     void setName(const QString &str);
